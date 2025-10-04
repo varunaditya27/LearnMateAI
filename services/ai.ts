@@ -11,7 +11,8 @@
  * TODO: Implement adaptive learning recommendations based on user performance
  */
 
-import { LearningPath, LearningStep, Resource, DoubtQuery } from '@/types';
+import { LearningPath, LearningStep, Resource } from '@/types';
+import { Timestamp } from 'firebase/firestore';
 
 /**
  * Generate a personalized learning path using Gemini API
@@ -104,7 +105,7 @@ export async function generateLearningPath(
     steps: mockSteps,
     status: 'active',
     progress: 0,
-    startedAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as any,
+    startedAt: { seconds: Date.now() / 1000, nanoseconds: 0 } as unknown as Timestamp,
   };
 }
 
