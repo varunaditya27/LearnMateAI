@@ -131,21 +131,20 @@ export const ScreenTimeWidget: React.FC = () => {
         <div className="grid grid-cols-3 gap-4">
           {appShortcuts.map((app, index) => (
             <motion.button
-              key={app.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleAppClick(app)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
-            >
-              <span className="text-3xl">{app.icon}</span>
-              <span className="text-xs font-medium text-center text-[var(--foreground)]">{app.name}</span>
-              <Badge variant={getCategoryColor(app.category)} size="sm">
-                {app.category}
-              </Badge>
-            </motion.button>
+  key={app.name}
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: index * 0.05 }}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => handleAppClick(app)}
+  className="flex flex-col items-center gap-3 p-5 rounded-xl bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
+>
+  <span className="text-3xl">{app.icon}</span>
+  <span className="text-sm font-semibold text-center text-[var(--foreground)]">{app.name}</span>
+<span className="!px-3 !py-1 sm:!px-4 sm:!py-1.5 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">    {app.category}
+  </span>
+</motion.button>
           ))}
         </div>
 

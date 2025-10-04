@@ -43,12 +43,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <Link href="/dashboard">
-              <h1 className="text-2xl font-bold text-[var(--primary)] tracking-tight hover:opacity-80 transition-opacity">
+              <h1 className="text-4xl tracking-tight hover:opacity-80 transition-opacity">
                 LearnMateAI
               </h1>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-2">
+            <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 return (
@@ -62,7 +62,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             </nav>
 
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 px-8 py-2 bg-[var(--accent)] text-[var(--accent-foreground)] rounded-full font-semibold">
+              <div className="hidden sm:flex items-center gap-0 px-8 py-2 bg-[var(--accent)] text-[var(--accent-foreground)] rounded-full font-semibold">
                 <span>🔥</span>
                 <span>5 Days</span>
               </div>
@@ -95,7 +95,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-t border-[var(--border)] bg-[var(--card)]"
             >
-              <nav className="px-6 py-4 space-y-2">
+              <nav className="px-8 py-4 mt-3 space-y-3">
                 {navItems.map((item) => {
                   const isActive = pathname === item.href;
                   return (
@@ -103,7 +103,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                       key={item.href}
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`block px-4 py-3 rounded-lg font-medium transition-colors ${isActive ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'text-[var(--foreground)] hover:bg-[var(--muted)]'}`}
+                      className={`block pl-7 py-3 rounded-lg font-medium transition-colors ${isActive ? 'bg-[var(--primary)] text-[var(--primary-foreground)]' : 'text-[var(--foreground)] hover:bg-[var(--muted)]'}`}
                     >
                       {item.label}
                     </Link>

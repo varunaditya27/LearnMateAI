@@ -43,7 +43,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`flex items-center gap-10 p-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
+                className={`flex items-center gap-4 p-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
               >
                 <div className="w-12 text-center font-bold text-lg">
                   {getRankDisplay(entry.rank)}
@@ -66,9 +66,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-[var(--foreground)]">{entry.displayName}</span>
-                    {isCurrentUser && (
-                      <Badge variant="primary" size="sm">You</Badge>
-                    )}
+                    {isCurrentUser}
                   </div>
                   <div className="text-sm text-[var(--muted-foreground)]">
                     Level {entry.level}
