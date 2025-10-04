@@ -21,7 +21,7 @@ export function FloatingChatButton({ onClick, isOpen, unreadCount = 0 }: Floatin
 
   return (
     <motion.div
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-50"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}

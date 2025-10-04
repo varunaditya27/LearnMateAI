@@ -7,7 +7,8 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import type { KeyboardEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { sendChatMessage } from '@/services/chatbot';
 import type { ChatMessage } from '@/types';
@@ -19,14 +20,18 @@ interface ChatWindowProps {
 }
 
 export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
+  const initialAssistantMessage = useMemo<ChatMessage>(
+    () => ({
+      id: 'assistant-welcome',
       role: 'assistant',
-      content: "Hi! I'm LearnMate AI, your personal learning assistant. 👋\n\nI'm here to help clarify doubts, explain concepts, and support your learning journey. What would you like to know?",
+      content:
+        "Hi! I'm LearnMate AI, your personal learning assistant. 👋\n\nI'm here to help clarify doubts, explain concepts, and support your learning journey. What would you like to know?",
       timestamp: new Date(),
-    },
-  ]);
+    }),
+    []
+  );
+
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [initialAssistantMessage]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -52,27 +57,28 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
     if (!inputValue.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}`,
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedHistory = [...messages, userMessage];
+    setMessages(updatedHistory);
     setInputValue('');
     setIsLoading(true);
 
     try {
       const response = await sendChatMessage(
         userMessage.content,
-        messages,
+        updatedHistory,
         learningContext
       );
 
       const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: `assistant-${Date.now()}`,
         role: 'assistant',
-        content: response,
+        content: response.trim(),
         timestamp: new Date(),
       };
 
@@ -80,7 +86,7 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: `assistant-error-${Date.now()}`,
         role: 'assistant',
         content: "I'm sorry, I encountered an error processing your request. Please try again.",
         timestamp: new Date(),
@@ -91,7 +97,7 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -101,13 +107,19 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
   const handleClearChat = () => {
     setMessages([
       {
-        id: '1',
+        id: `assistant-reset-${Date.now()}`,
         role: 'assistant',
         content: "Chat cleared! How can I help you today?",
         timestamp: new Date(),
       },
     ]);
   };
+
+  const formattedTime = (timestamp: Date) =>
+    timestamp.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
   return (
     <AnimatePresence>
@@ -124,16 +136,16 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
 
           {/* Chat Window */}
           <motion.div
-            className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden"
+            className="fixed bottom-24 right-5 w-[calc(100vw-2.5rem)] max-w-[420px] sm:max-w-[460px] h-[520px] sm:h-[600px] bg-white/95 backdrop-blur-xl border border-gray-100 rounded-3xl shadow-[0_20px_70px_-30px_rgba(59,130,246,0.55)] z-[55] flex flex-col overflow-hidden"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                <div className="w-11 h-11 bg-white/20 rounded-full flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6 text-white"
@@ -154,10 +166,10 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
                   <p className="text-white/80 text-xs">Always here to help</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   onClick={handleClearChat}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2.5 hover:bg-white/15 rounded-xl transition-colors"
                   title="Clear chat"
                 >
                   <svg
@@ -177,7 +189,7 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
                 </button>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  className="p-2.5 hover:bg-white/15 rounded-xl transition-colors"
                   title="Close chat"
                 >
                   <svg
@@ -200,15 +212,16 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
 
             {/* Learning Context Banner */}
             {learningContext && (
-              <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
-                <p className="text-xs text-blue-700">
-                  <span className="font-semibold">Context:</span> {learningContext}
+              <div className="bg-blue-50 border-y border-blue-100/70 px-6 py-3">
+                <p className="text-xs font-medium text-blue-800">
+                  <span className="font-semibold text-blue-900">Context:</span>{' '}
+                  {learningContext}
                 </p>
               </div>
             )}
 
             {/* Messages Container */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto px-6 pt-5 pb-6 space-y-5 bg-gray-50">
               {messages.map((message) => (
                 <motion.div
                   key={message.id}
@@ -218,25 +231,22 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`max-w-[82%] rounded-3xl px-4 py-3.5 shadow-sm ${
                       message.role === 'user'
                         ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'
-                        : 'bg-white text-gray-800 shadow-sm'
+                        : 'bg-white text-gray-800 border border-gray-200/70'
                     }`}
                   >
-                    <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                    <div className="whitespace-pre-wrap break-words text-[0.95rem] leading-relaxed">
                       {message.content}
                     </div>
-                    <div
-                      className={`text-xs mt-2 ${
-                        message.role === 'user' ? 'text-white/70' : 'text-gray-400'
+                    <span
+                      className={`block text-[0.7rem] mt-2 tracking-wide ${
+                        message.role === 'user' ? 'text-white/70 text-right' : 'text-gray-400'
                       }`}
                     >
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
+                      {formattedTime(message.timestamp)}
+                    </span>
                   </div>
                 </motion.div>
               ))}
@@ -248,7 +258,7 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
                   animate={{ opacity: 1, y: 0 }}
                   className="flex justify-start"
                 >
-                  <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="bg-white rounded-3xl px-4 py-3 border border-gray-200/70 shadow-sm">
                     <div className="flex space-x-2">
                       <motion.div
                         className="w-2 h-2 bg-gray-400 rounded-full"
@@ -274,22 +284,22 @@ export function ChatWindow({ isOpen, onClose, learningContext }: ChatWindowProps
             </div>
 
             {/* Input Area */}
-            <div className="border-t bg-white p-4">
-              <div className="flex gap-2">
+            <div className="border-t border-gray-100 bg-white px-6 py-4">
+              <div className="flex gap-3">
                 <input
                   ref={inputRef}
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                   placeholder="Ask me anything..."
                   disabled={isLoading}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+                  className="flex-1 px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-transparent disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-sm placeholder:text-gray-400"
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputValue.trim() || isLoading}
-                  className="px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl hover:from-blue-600 hover:to-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-2"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
