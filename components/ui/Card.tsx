@@ -27,7 +27,7 @@ export const Card: React.FC<CardProps> = ({
       whileHover={isInteractive ? { y: -4, boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)' } : {}}
       transition={{ duration: 0.2 }}
       onClick={onClick}
-      className={`bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm ${isInteractive ? 'cursor-pointer' : ''} ${className}`}
+      className={`bg-[var(--card)]  text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm ${isInteractive ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </motion.div>
@@ -41,7 +41,7 @@ interface CardHeaderProps {
 
 export const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
   return (
-    <div className={`p-8 ${className}`}>
+    <div className={`p-8 ${className} `}>
       {children}
     </div>
   );
@@ -54,7 +54,7 @@ interface CardTitleProps {
 
 export const CardTitle: React.FC<CardTitleProps> = ({ children, className = '' }) => {
   return (
-    <h3 className={`text-2xl font-bold text-[var(--foreground)] ${className}`}>
+    <h3 className={`text-3xl md:!text-4xl inline-flex my-3 items-center font-bold  text-[var(--foreground)] ${className}`}>
       {children}
     </h3>
   );

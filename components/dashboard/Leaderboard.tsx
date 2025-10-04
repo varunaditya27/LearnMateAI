@@ -43,13 +43,13 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`flex items-center gap-4 p-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
+                className={`flex items-center md:!text-3xl gap-4 !pt-2 !pr-4 !pl-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
               >
-                <div className="w-12 text-center font-bold text-lg">
+                <div className="w-12 text-center font-bold md!text-5xl text-2xl">
                   {getRankDisplay(entry.rank)}
                 </div>
 
-                <div className="w-12 h-12 rounded-full bg-[var(--primary)] flex items-center justify-center text-[var(--primary-foreground)] font-bold overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-[var(--primary)] flex items-center justify-center text-[var(--primary-foreground)]  font-bold overflow-hidden">
                   {entry.photoURL ? (
                     <Image 
                       src={entry.photoURL} 

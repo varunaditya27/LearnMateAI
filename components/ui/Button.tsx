@@ -25,17 +25,17 @@ interface ButtonProps {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:opacity-90 shadow-md hover:shadow-lg',
-  secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:opacity-90 shadow-sm hover:shadow-md',
-  accent: 'bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 shadow-md hover:shadow-lg',
-  outline: 'border-2 border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)] hover:border-[var(--primary)]',
+  primary: 'bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90 shadow-lg hover:shadow-xl active:shadow-md',
+  secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-[var(--secondary)]/90 shadow-lg hover:shadow-xl active:shadow-md',
+  accent: 'bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent)]/90 shadow-lg hover:shadow-xl active:shadow-md',
+  outline: 'border-2 border-[var(--border)] text-[var(--foreground)] hover:bg-[var(--muted)] hover:border-[var(--primary)] shadow-sm hover:shadow-md',
   ghost: 'text-[var(--foreground)] hover:bg-[var(--muted)]',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'px-4 py-2 text-sm',
-  md: 'px-6 py-3 text-base',
-  lg: 'px-8 py-4 text-lg',
+  sm: '!px-4 !py-2 text-lg',
+  md: '!px-6 !py-3.5 text-2xl',
+  lg: '!px-8 !py-5 text-lg',
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -55,11 +55,11 @@ export const Button: React.FC<ButtonProps> = ({
     <motion.button
       type={type}
       onClick={onClick}
-      whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
+      whileHover={{ scale: disabled || isLoading ? 1 : 1.01, y: disabled || isLoading ? 0 : -2 }}
+whileTap={{ scale: disabled || isLoading ? 1 : 0.97, y: disabled || isLoading ? 0 : 1 }}
       className={`
-        inline-flex items-center justify-center gap-3
-        font-semibold rounded-xl h-10
+  inline-flex items-center justify-center gap-3
+  font-semibold rounded-xl min-h-[48px]
         transition-all duration-200
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variantStyles[variant]}

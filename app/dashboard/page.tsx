@@ -76,11 +76,11 @@ export default function DashboardPage() {
       variants={fadeIn}
       transition={{ duration: 0.5 }}
     >
-      <h1 className="text-4xl lg:text-5xl font-bold mb-3 px-2">
+      <h1 className="text-5xl lg:text-5xl md:text-5xl font-bold mb-5 px-2">
             Welcome back
           </h1>
-          <p className="text-lg text-[var(--muted-foreground)] px-2">
-            Continue your learning journey
+          <p className="text-3xl text-[var(--muted-foreground)] px-2">
+            Continue your learning journey !
           </p>
         </motion.div>
 
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               <CardTitle>Today's Challenge</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-[var(--muted-foreground)] mb-6">
+              <p className="text-[var(--muted-foreground)] md:!text-2xl mb-6">
                 Complete 3 concepts to maintain your streak
               </p>
               <div className="flex items-center gap-4">
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           variants={fadeIn}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <h2 className="text-3xl font-bold mb-6">Continue Watching</h2>
+          <h2 className="text-4xl font-bold mb-6">Continue Watching</h2>
           <div className="overflow-x-auto">
             <div className="flex gap-6 pb-4">
               {recentActivity.map((activity, index) => (
@@ -174,25 +174,25 @@ export default function DashboardPage() {
           <ScreenTimeWidget />
 
           <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Link href="/dashboard/learning">
-                <Button variant="primary" fullWidth leftIcon={<span>🎯</span>}>
-                  Start New Learning Path
-                </Button>
-              </Link>
-              <Link href="/dashboard/progress">
-                <Button variant="secondary" fullWidth leftIcon={<span>📈</span>}>
-                  View Your Progress
-                </Button>
-              </Link>
-              <Button variant="outline" fullWidth leftIcon={<span>💡</span>}>
-                Ask AI a Question
-              </Button>
-            </CardContent>
-          </Card>
+  <CardHeader>
+    <CardTitle>Quick Actions</CardTitle>
+  </CardHeader>
+  <CardContent className="flex  flex-col  !gap-5">
+  <Link href="/dashboard/learning">
+    <Button variant="primary" fullWidth leftIcon={<span>🎯</span>}>
+        Start New Learning Path
+      </Button>
+    </Link>
+    <Link href="/dashboard/progress">
+      <Button variant="secondary" fullWidth leftIcon={<span>📈</span>}>
+        View Your Progress
+      </Button>
+    </Link>
+    <Button variant="outline" fullWidth leftIcon={<span>💡</span>}>
+      Ask AI a Question
+    </Button>
+  </CardContent>
+</Card>
         </motion.div>
 
         <motion.div

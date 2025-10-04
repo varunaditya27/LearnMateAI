@@ -103,24 +103,24 @@ export const ScreenTimeWidget: React.FC = () => {
   <motion.div
     initial={{ opacity: 0, y: -10 }}
     animate={{ opacity: 1, y: 0 }}
-    className="mb-6 !p-6 bg-[var(--accent)]/10 border border-[var(--accent)] rounded-xl"
+    className="mb-6 bg-[var(--accent)]/10 border border-[var(--accent)] rounded-xl"
   >
     <div className="flex items-center justify-between gap-6">
       <div className="flex items-center gap-4">
         <div className="relative w-20 h-20 flex-shrink-0">
           <svg className="w-20 h-20 transform -rotate-90">
             <circle
-              cx="40"
-              cy="40"
-              r="36"
+              cx="30"
+              cy="30"
+              r="25"
               stroke="var(--muted)"
               strokeWidth="6"
               fill="none"
             />
             <circle
-              cx="40"
-              cy="40"
-              r="36"
+              cx="30"
+              cy="30"
+              r="25"
               stroke={elapsedTime > 2700 ? '#ef4444' : elapsedTime > 1800 ? '#f59e0b' : '#10b981'}
               strokeWidth="6"
               fill="none"
@@ -171,7 +171,7 @@ export const ScreenTimeWidget: React.FC = () => {
 >
   <img src={app.icon} alt={app.name} className="w-10 h-10 mt-3" style={{ filter: 'grayscale(0%)' }} />
   <span className="text-md font-semibold text-center text-[var(--foreground)]">{app.name}</span>
-<span className="!px-3 !py-1 sm:!px-4 sm:!py-1.5 text-xs mb-2 font-semibold rounded-full bg-orange-100 text-orange-700">    {app.category}
+<span className="!px-3 !py-1 sm:!px-4 sm:!py-1.5 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">    {app.category}
   </span>
 </motion.button>
           ))}

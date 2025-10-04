@@ -45,7 +45,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       <CardContent>
         <div className="mb-8">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[var(--muted-foreground)]">Concepts Completed</span>
+            <span className="md:!text-2xl text-[var(--muted-foreground)]">Concepts Completed</span>
             <span className="font-bold">{completedConcepts} / {totalConcepts}</span>
           </div>
           <div className="w-full bg-[var(--muted)] rounded-full h-3 overflow-hidden">
