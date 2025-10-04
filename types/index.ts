@@ -267,6 +267,23 @@ export interface Reminder {
 
 // ==================== AI/DOUBT CLARIFICATION TYPES ====================
 
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+}
+
+export interface ChatSession {
+  id: string;
+  userId: string;
+  messages: ChatMessage[];
+  context?: string;
+  startedAt: Date;
+  lastMessageAt: Date;
+  isActive: boolean;
+}
+
 export interface DoubtQuery {
   id: string;
   userId: string;
