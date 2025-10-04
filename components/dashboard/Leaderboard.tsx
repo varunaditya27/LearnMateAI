@@ -34,7 +34,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
         <CardTitle>🏆 Leaderboard</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {entries.map((entry, index) => {
             const isCurrentUser = entry.userId === currentUserId;
             return (
@@ -43,7 +43,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className={`flex items-center gap-4 p-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
+                className={`flex items-center gap-10 p-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
               >
                 <div className="w-12 text-center font-bold text-lg">
                   {getRankDisplay(entry.rank)}
