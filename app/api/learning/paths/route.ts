@@ -1,0 +1,107 @@
+/**
+ * Learning API - Paths Route
+ * GET /api/learning/paths
+ * POST /api/learning/paths
+ * 
+ * Get user's learning paths and create new ones.
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+
+export async function GET() {
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const pathsRef = collection(db, 'learningPaths');
+    const q = query(pathsRef, where('userId', '==', user.uid));
+    const querySnapshot = await getDocs(q);
+
+    const paths = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return NextResponse.json({
+      success: true,
+      data: paths,
+    });
+  } catch (error) {
+    console.error('Get learning paths error:', error);
+    
+    return NextResponse.json(
+      { success: false, error: 'Failed to get learning paths' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { name, description, domainId, subdomainId, topicId, steps } = body;
+
+    if (!name || !domainId || !subdomainId || !topicId) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const pathsRef = collection(db, 'learningPaths');
+    const docRef = await addDoc(pathsRef, {
+      userId: user.uid,
+      name,
+      description: description || '',
+      domainId,
+      subdomainId,
+      topicId,
+      steps: steps || [],
+      status: 'active',
+      progress: 0,
+      startedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        id: docRef.id,
+        userId: user.uid,
+        name,
+        description,
+        domainId,
+        subdomainId,
+        topicId,
+        steps,
+        status: 'active',
+        progress: 0,
+      },
+    });
+  } catch (error) {
+    console.error('Create learning path error:', error);
+    
+    return NextResponse.json(
+      { success: false, error: 'Failed to create learning path' },
+      { status: 500 }
+    );
+  }
+}
