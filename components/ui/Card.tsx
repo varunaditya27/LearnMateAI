@@ -1,8 +1,7 @@
 /**
  * Card Component
  * 
- * A versatile card component for displaying content with consistent styling.
- * Supports hover animations and custom actions.
+ * Clean card design with consistent styling
  */
 
 import React from 'react';
@@ -13,37 +12,22 @@ interface CardProps {
   className?: string;
   hoverable?: boolean;
   onClick?: () => void;
-  padding?: 'sm' | 'md' | 'lg';
 }
-
-const paddingStyles = {
-  sm: 'p-3',
-  md: 'p-4',
-  lg: 'p-6',
-};
 
 export const Card: React.FC<CardProps> = ({
   children,
   className = '',
   hoverable = false,
   onClick,
-  padding = 'md',
 }) => {
   const isInteractive = hoverable || !!onClick;
 
   return (
     <motion.div
-      whileHover={isInteractive ? { y: -2, boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)' } : {}}
+      whileHover={isInteractive ? { y: -4, boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)' } : {}}
       transition={{ duration: 0.2 }}
       onClick={onClick}
-      className={`
-        bg-[var(--card)] text-[var(--card-foreground)]
-        rounded-xl border border-[var(--border)]
-        transition-all duration-200
-        ${paddingStyles[padding]}
-        ${isInteractive ? 'cursor-pointer' : ''}
-        ${className}
-      `}
+      className={`bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] rounded-2xl shadow-sm ${isInteractive ? 'cursor-pointer' : ''} ${className}`}
     >
       {children}
     </motion.div>
@@ -57,7 +41,7 @@ interface CardHeaderProps {
 
 export const CardHeader: React.FC<CardHeaderProps> = ({ children, className = '' }) => {
   return (
-    <div className={`mb-4 ${className}`}>
+    <div className={`p-8 ${className}`}>
       {children}
     </div>
   );
@@ -70,7 +54,7 @@ interface CardTitleProps {
 
 export const CardTitle: React.FC<CardTitleProps> = ({ children, className = '' }) => {
   return (
-    <h3 className={`text-xl font-semibold font-heading ${className}`}>
+    <h3 className={`text-2xl font-bold text-[var(--foreground)] ${className}`}>
       {children}
     </h3>
   );
@@ -83,7 +67,7 @@ interface CardDescriptionProps {
 
 export const CardDescription: React.FC<CardDescriptionProps> = ({ children, className = '' }) => {
   return (
-    <p className={`text-sm text-[var(--muted-foreground)] mt-1 ${className}`}>
+    <p className={`text-[var(--muted-foreground)] mt-2 ${className}`}>
       {children}
     </p>
   );
@@ -96,7 +80,7 @@ interface CardContentProps {
 
 export const CardContent: React.FC<CardContentProps> = ({ children, className = '' }) => {
   return (
-    <div className={className}>
+    <div className={`px-8 pb-8 ${className}`}>
       {children}
     </div>
   );
@@ -109,7 +93,7 @@ interface CardFooterProps {
 
 export const CardFooter: React.FC<CardFooterProps> = ({ children, className = '' }) => {
   return (
-    <div className={`mt-4 pt-4 border-t border-[var(--border)] ${className}`}>
+    <div className={`px-8 pb-8 pt-4 border-t border-[var(--border)] ${className}`}>
       {children}
     </div>
   );

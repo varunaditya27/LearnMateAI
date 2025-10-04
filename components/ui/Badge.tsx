@@ -1,7 +1,7 @@
 /**
  * Badge Component
  * 
- * A small badge component for labels, tags, and status indicators.
+ * Clean badge for labels and status indicators
  */
 
 import React from 'react';
@@ -16,18 +16,18 @@ interface BadgeProps {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-[var(--muted)] text-[var(--muted-foreground)]',
-  primary: 'bg-[var(--primary)] text-[var(--primary-foreground)]',
-  secondary: 'bg-[var(--secondary)] text-[var(--secondary-foreground)]',
-  accent: 'bg-[var(--accent)] text-[var(--accent-foreground)]',
-  success: 'bg-green-500 text-white',
-  warning: 'bg-yellow-500 text-white',
-  danger: 'bg-red-500 text-white',
+  default: 'bg-gray-100 text-gray-700',
+  primary: 'bg-blue-100 text-blue-700',
+  secondary: 'bg-purple-100 text-purple-700',
+  accent: 'bg-orange-100 text-orange-700',
+  success: 'bg-green-100 text-green-700',
+  warning: 'bg-yellow-100 text-yellow-700',
+  danger: 'bg-red-100 text-red-700',
 };
 
 const sizeStyles = {
-  sm: 'px-2 py-0.5 text-xs',
-  md: 'px-2.5 py-1 text-sm',
+  sm: 'px-2.5 py-1 text-xs',
+  md: 'px-3 py-1.5 text-sm',
 };
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -38,13 +38,7 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   return (
     <span
-      className={`
-        inline-flex items-center justify-center
-        font-medium rounded-full
-        ${variantStyles[variant]}
-        ${sizeStyles[size]}
-        ${className}
-      `}
+      className={`inline-flex items-center px-32 justify-center font-semibold rounded-full ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
     >
       {children}
     </span>

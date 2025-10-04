@@ -1,17 +1,13 @@
 /**
  * Screen Time Widget Component
  * 
- * Tracks and displays screen time for different apps/activities.
- * Includes quick shortcuts to popular distracting apps with time tracking.
- * 
- * TODO: Integrate with browser extension for accurate tracking
- * TODO: Add detailed analytics view
- * TODO: Add productivity score calculation
+ * Consistent greyish theme screen time tracker
  */
 
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -43,7 +39,6 @@ export const ScreenTimeWidget: React.FC = () => {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [todayTotal, setTodayTotal] = useState(0);
 
-  // Timer for active session
   useEffect(() => {
     if (activeSession) {
       const interval = setInterval(() => {
@@ -57,20 +52,14 @@ export const ScreenTimeWidget: React.FC = () => {
 
   const handleAppClick = (app: AppShortcut) => {
     if (activeSession) {
-      // End current session
       const sessionDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
       setTodayTotal((prev) => prev + sessionDuration);
       setActiveSession(null);
       setElapsedTime(0);
-      
-      // TODO: Save session to Firestore
-      console.log(`Session ended: ${activeSession.appName}, Duration: ${sessionDuration}s`);
     }
 
-    // Open the app
     window.open(app.url, '_blank');
 
-    // Start new tracking session
     setActiveSession({
       appName: app.name,
       startTime: Date.now(),
@@ -105,19 +94,22 @@ export const ScreenTimeWidget: React.FC = () => {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>⏱️ Screen Time Tracker</CardTitle>
+          <CardTitle>Screen Time</CardTitle>
           <Badge variant="accent">{formatTime(todayTotal)} today</Badge>
         </div>
       </CardHeader>
       <CardContent>
-        {/* Active Session Alert */}
         {activeSession && (
-          <div className="mb-4 p-3 bg-[var(--accent)]/10 border border-[var(--accent)] rounded-lg">
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-[var(--accent)]/10 border border-[var(--accent)] rounded-xl"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-semibold">Tracking: {activeSession.appName}</p>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Duration: {formatTime(elapsedTime)}
+                <p className="font-semibold text-[var(--foreground)]">Tracking: {activeSession.appName}</p>
+                <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                  {formatTime(elapsedTime)}
                 </p>
               </div>
               <Button
@@ -133,31 +125,40 @@ export const ScreenTimeWidget: React.FC = () => {
                 Stop
               </Button>
             </div>
-          </div>
+          </motion.div>
         )}
 
-        {/* App Shortcuts Grid */}
-        <div className="grid grid-cols-3 gap-3">
-          {appShortcuts.map((app) => (
-            <button
+        <div className="grid grid-cols-3 gap-4">
+          {appShortcuts.map((app, index) => (
+            <motion.button
               key={app.name}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleAppClick(app)}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
+              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
             >
               <span className="text-3xl">{app.icon}</span>
-              <span className="text-xs font-medium text-center">{app.name}</span>
+              <span className="text-xs font-medium text-center text-[var(--foreground)]">{app.name}</span>
               <Badge variant={getCategoryColor(app.category)} size="sm">
                 {app.category}
               </Badge>
-            </button>
+            </motion.button>
           ))}
         </div>
 
-        <div className="mt-4 p-3 bg-[var(--muted)] rounded-lg">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-6 p-4 bg-[var(--muted)] rounded-xl"
+        >
           <p className="text-sm text-[var(--muted-foreground)]">
-            💡 Click an app to start tracking. Return here to stop the timer.
+            Click an app to start tracking. Return here to stop the timer.
           </p>
-        </div>
+        </motion.div>
       </CardContent>
     </Card>
   );
