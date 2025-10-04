@@ -1,7 +1,7 @@
 /**
  * Input Component
  * 
- * A reusable input component with consistent styling and validation support.
+ * Clean input field with validation support
  */
 
 import React from 'react';
@@ -34,14 +34,14 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-sm font-medium mb-1.5">
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <div className="relative">
         {icon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
             {icon}
           </div>
         )}
@@ -52,21 +52,11 @@ export const Input: React.FC<InputProps> = ({
           onChange={onChange}
           disabled={disabled}
           required={required}
-          className={`
-            w-full px-4 py-2 rounded-lg
-            bg-[var(--background)] border-2 border-[var(--border)]
-            text-[var(--foreground)]
-            placeholder:text-[var(--muted-foreground)]
-            focus:outline-none focus:border-[var(--primary)]
-            disabled:opacity-50 disabled:cursor-not-allowed
-            transition-colors duration-200
-            ${icon ? 'pl-10' : ''}
-            ${error ? 'border-red-500' : ''}
-          `}
+          className={`w-full px-4 py-3 rounded-xl bg-white border-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${icon ? 'pl-12' : ''} ${error ? 'border-red-300 focus:border-red-500' : 'border-gray-200'}`}
         />
       </div>
       {error && (
-        <p className="mt-1.5 text-sm text-red-500">{error}</p>
+        <p className="mt-2 text-sm text-red-600">{error}</p>
       )}
     </div>
   );

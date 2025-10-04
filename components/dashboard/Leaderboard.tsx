@@ -1,16 +1,13 @@
 /**
  * Leaderboard Component
  * 
- * Displays top learners ranked by points and engagement.
- * 
- * TODO: Add filtering options (weekly, monthly, all-time)
- * TODO: Add user's current rank highlight
- * TODO: Implement real-time updates
+ * Consistent greyish theme leaderboard
  */
 
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { LeaderboardEntry } from '@/types';
@@ -22,12 +19,12 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId }) => {
-  const getRankEmoji = (rank: number) => {
+  const getRankDisplay = (rank: number) => {
     switch (rank) {
       case 1: return '🥇';
       case 2: return '🥈';
       case 3: return '🥉';
-      default: return `#${rank}`;
+      default: return rank;
     }
   };
 
@@ -38,34 +35,27 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {entries.map((entry) => {
+          {entries.map((entry, index) => {
             const isCurrentUser = entry.userId === currentUserId;
             return (
-              <div
+              <motion.div
                 key={entry.userId}
-                className={`
-                  flex items-center gap-4 p-3 rounded-lg
-                  transition-colors duration-200
-                  ${
-                    isCurrentUser
-                      ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]'
-                      : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'
-                  }
-                `}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`flex items-center gap-4 p-4 rounded-xl transition-all ${isCurrentUser ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]' : 'bg-[var(--muted)] hover:bg-[var(--muted)]/70'}`}
               >
-                {/* Rank */}
                 <div className="w-12 text-center font-bold text-lg">
-                  {getRankEmoji(entry.rank)}
+                  {getRankDisplay(entry.rank)}
                 </div>
 
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-full bg-[var(--primary)] flex items-center justify-center text-white font-semibold overflow-hidden">
+                <div className="w-12 h-12 rounded-full bg-[var(--primary)] flex items-center justify-center text-[var(--primary-foreground)] font-bold overflow-hidden">
                   {entry.photoURL ? (
                     <Image 
                       src={entry.photoURL} 
                       alt={entry.displayName} 
-                      width={40}
-                      height={40}
+                      width={48}
+                      height={48}
                       className="w-full h-full object-cover" 
                     />
                   ) : (
@@ -73,10 +63,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                   )}
                 </div>
 
-                {/* Name and Level */}
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold">{entry.displayName}</span>
+                    <span className="font-semibold text-[var(--foreground)]">{entry.displayName}</span>
                     {isCurrentUser && (
                       <Badge variant="primary" size="sm">You</Badge>
                     )}
@@ -86,7 +75,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                   </div>
                 </div>
 
-                {/* Points */}
                 <div className="text-right">
                   <div className="font-bold text-[var(--primary)]">
                     {entry.points.toLocaleString()}
@@ -96,12 +84,11 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                   </div>
                 </div>
 
-                {/* Streak */}
                 <div className="hidden sm:block text-center">
                   <div className="text-xl">🔥</div>
                   <div className="text-xs font-semibold">{entry.streak}</div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

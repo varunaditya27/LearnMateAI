@@ -1,14 +1,14 @@
 /**
  * Progress Bar Component
  * 
- * A visual progress indicator with smooth animations.
+ * Smooth animated progress indicator
  */
 
 import React from 'react';
 import { motion } from 'framer-motion';
 
 interface ProgressProps {
-  value: number; // 0-100
+  value: number;
   showLabel?: boolean;
   size?: 'sm' | 'md' | 'lg';
   color?: 'primary' | 'secondary' | 'accent';
@@ -16,15 +16,15 @@ interface ProgressProps {
 }
 
 const sizeStyles = {
-  sm: 'h-1',
-  md: 'h-2',
+  sm: 'h-1.5',
+  md: 'h-2.5',
   lg: 'h-3',
 };
 
 const colorStyles = {
-  primary: 'bg-[var(--primary)]',
-  secondary: 'bg-[var(--secondary)]',
-  accent: 'bg-[var(--accent)]',
+  primary: 'bg-gradient-to-r from-blue-500 to-purple-500',
+  secondary: 'bg-gray-600',
+  accent: 'bg-orange-500',
 };
 
 export const Progress: React.FC<ProgressProps> = ({
@@ -40,15 +40,15 @@ export const Progress: React.FC<ProgressProps> = ({
     <div className={`w-full ${className}`}>
       {showLabel && (
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium">Progress</span>
-          <span className="text-sm font-semibold">{Math.round(clampedValue)}%</span>
+          <span className="text-sm font-medium text-gray-700">Progress</span>
+          <span className="text-sm font-bold text-gray-900">{Math.round(clampedValue)}%</span>
         </div>
       )}
-      <div className={`w-full bg-[var(--muted)] rounded-full overflow-hidden ${sizeStyles[size]}`}>
+      <div className={`w-full bg-gray-200 rounded-full overflow-hidden ${sizeStyles[size]}`}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${clampedValue}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
           className={`h-full rounded-full ${colorStyles[color]}`}
         />
       </div>
