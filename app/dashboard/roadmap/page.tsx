@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -44,7 +44,21 @@ type ExperienceLevel = typeof experienceLevels[number];
 
 export default function RoadmapPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
-  const isReady = isAuthenticated && !authLoading;
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for auth to be fully ready before making API calls
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      const timer = setTimeout(() => {
+        setAuthReady(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setAuthReady(false);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  const isReady = isAuthenticated && !authLoading && authReady;
 
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
 
@@ -53,6 +67,7 @@ export default function RoadmapPage() {
     loading: roadmapsLoading,
     error: roadmapsError,
     refetch: refetchRoadmaps,
+    invalidate: invalidateRoadmaps,
   } = useAsyncData(() => fetchRoadmaps(statusFilter), {
     enabled: isReady,
     immediate: isReady,
@@ -98,7 +113,12 @@ export default function RoadmapPage() {
       if (response.success && response.data) {
         setForm({ careerGoal: '', experienceLevel: experienceLevels[0], timeframe: '6 months', currentSkills: '' });
         setFeedback({ type: 'success', message: 'Career roadmap generated successfully!' });
-        await refetchRoadmaps();
+        
+        // Invalidate cache and refetch to show new roadmap
+        invalidateRoadmaps();
+        setTimeout(async () => {
+          await refetchRoadmaps();
+        }, 500);
       } else {
         throw new Error(extractErrorMessage(response.error, 'Unable to generate roadmap'));
       }

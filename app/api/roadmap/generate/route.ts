@@ -6,11 +6,24 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { verifyAuth } from '@/lib/auth-middleware';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, query, where, orderBy, getDocs, Timestamp, doc, updateDoc } from 'firebase/firestore';
 
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const authResult = await verifyAuth(request);
+    if (!authResult) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = authResult.uid;
+
     const body = await request.json();
     const { careerGoal, currentSkills, experienceLevel, timeframe } = body;
 
@@ -21,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     
     const systemPrompt = `You are an expert career counselor and learning path architect. Generate a comprehensive, actionable career roadmap.
 
@@ -99,27 +112,37 @@ Make it specific, actionable, and realistic. Include 3-4 phases.`;
       };
     }
 
+    // Save to Firestore
+    const roadmapsRef = collection(db, 'roadmaps');
     const roadmapData = {
-      id: `roadmap_${Date.now()}`,
-      userId: 'current_user_id', // TODO: Get from auth
+      userId,
       ...roadmap,
-      createdAt: new Date().toISOString(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
       status: 'active',
-      progress: 0
+      progress: 0,
     };
 
-    // TODO: Save to database
+    const docRef = await addDoc(roadmapsRef, roadmapData);
+
+    const savedRoadmap = {
+      id: docRef.id,
+      ...roadmapData,
+      createdAt: roadmapData.createdAt.toDate().toISOString(),
+      updatedAt: roadmapData.updatedAt.toDate().toISOString(),
+    };
 
     return NextResponse.json({
       success: true,
-      data: roadmapData,
+      data: savedRoadmap,
       message: 'Career roadmap generated successfully'
     });
 
   } catch (error) {
     console.error('Generate roadmap error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to generate career roadmap';
     return NextResponse.json(
-      { success: false, error: 'Failed to generate career roadmap' },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -128,51 +151,114 @@ Make it specific, actionable, and realistic. Include 3-4 phases.`;
 // GET - Get user's roadmaps
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate user
+    const authResult = await verifyAuth(request);
+    if (!authResult) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = authResult.uid;
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
 
-    // TODO: Fetch from database
-    const mockRoadmaps = [
-      {
-        id: 'roadmap_1',
-        careerGoal: 'Full Stack Developer',
-        overview: 'Comprehensive path to becoming a full-stack developer',
-        progress: 35,
-        status: 'active',
-        createdAt: '2025-09-15T00:00:00Z',
-        phases: [
-          {
-            phase: 1,
-            title: 'Frontend Fundamentals',
-            duration: '2 months',
-            completed: true
-          },
-          {
-            phase: 2,
-            title: 'Backend Development',
-            duration: '2 months',
-            completed: false
-          }
-        ]
-      }
-    ];
+    // Query Firestore
+    const roadmapsRef = collection(db, 'roadmaps');
+    let q = query(
+      roadmapsRef,
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
 
-    const filtered = status 
-      ? mockRoadmaps.filter(r => r.status === status)
-      : mockRoadmaps;
+    // Add status filter if provided
+    if (status && (status === 'active' || status === 'completed')) {
+      q = query(
+        roadmapsRef,
+        where('userId', '==', userId),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
+    const querySnapshot = await getDocs(q);
+    const roadmaps = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      data: filtered,
+      data: roadmaps,
       meta: {
-        total: filtered.length
+        total: roadmaps.length
       }
     });
 
   } catch (error) {
     console.error('Get roadmaps error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch roadmaps';
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch roadmaps' },
+      { success: false, error: message },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Update roadmap progress or status
+export async function PATCH(request: NextRequest) {
+  try {
+    // Authenticate user
+    const authResult = await verifyAuth(request);
+    if (!authResult) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { roadmapId, progress, status } = body;
+
+    if (!roadmapId) {
+      return NextResponse.json(
+        { success: false, error: 'Roadmap ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Update in Firestore
+    const roadmapRef = doc(db, 'roadmaps', roadmapId);
+    const updates: Record<string, unknown> = {
+      updatedAt: Timestamp.now(),
+    };
+
+    if (progress !== undefined) {
+      updates.progress = progress;
+    }
+
+    if (status) {
+      updates.status = status;
+    }
+
+    await updateDoc(roadmapRef, updates);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Roadmap updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Update roadmap error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to update roadmap';
+    return NextResponse.json(
+      { success: false, error: message },
       { status: 500 }
     );
   }

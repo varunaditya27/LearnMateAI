@@ -732,6 +732,13 @@ export const roadmapApi = {
     const query = params.toString();
     return apiCall<CareerRoadmap[]>(`/api/roadmap/generate${query ? `?${query}` : ''}`);
   },
+
+  async updateRoadmap(roadmapId: string, updates: { progress?: number; status?: 'active' | 'completed' }) {
+    return apiCall<{ message: string }>('/api/roadmap/generate', {
+      method: 'PATCH',
+      body: JSON.stringify({ roadmapId, ...updates }),
+    });
+  },
 };
 
 // ============================================
