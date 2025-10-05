@@ -12,7 +12,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { topic, timezone, pace, skillLevel, userId } = body;
+  const { topic, timezone, pace, skillLevel } = body;
 
     // Validate required fields
     if (!topic || !timezone || !pace || !skillLevel) {
@@ -74,16 +74,27 @@ For each match, provide a one-sentence compelling reason. Format as JSON array:
     const result = await model.generateContent(prompt);
     const response = result.response.text();
     
-    let matchReasons: any[] = [];
-    try {
-      // Extract JSON from response
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        matchReasons = JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      console.error('Error parsing AI response:', e);
+    interface MatchReason {
+      userId: string;
+      reason: string;
     }
+
+    const parseMatchReasons = (text: string): MatchReason[] => {
+      try {
+        const jsonMatch = text.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) return [];
+        const parsed = JSON.parse(jsonMatch[0]) as unknown;
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter((item): item is MatchReason =>
+          typeof item === 'object' && item !== null && 'userId' in item && 'reason' in item
+        );
+      } catch (parseError) {
+        console.error('Error parsing AI response:', parseError);
+        return [];
+      }
+    };
+
+    const matchReasons = parseMatchReasons(response);
 
     // Enhance matches with AI-generated reasons
     const enhancedMatches = mockUsers.map(user => {
@@ -102,10 +113,11 @@ For each match, provide a one-sentence compelling reason. Format as JSON array:
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Study buddy matching error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to find study buddies';
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to find study buddies' },
+      { success: false, error: message },
       { status: 500 }
     );
   }
