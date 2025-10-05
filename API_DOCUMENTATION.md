@@ -609,15 +609,17 @@ Find and match with study buddies based on learning preferences.
         "userId": "user_123",
         "displayName": "Alice Johnson",
         "topic": "python",
-        "timezone": "Asia/Kolkata",
-        "pace": "fast",
         "skillLevel": "beginner",
-        "interests": ["web development", "javascript"],
+        "photoURL": null,
         "matchScore": 95,
-        "matchReason": "Perfect match for your learning goals and schedule"
+        "matchReason": "Perfect match for your learning goals and schedule",
+        "studyPreferences": {
+          "timezone": "Asia/Kolkata",
+          "pace": "fast"
+        }
       }
     ],
-    "totalMatches": 3
+    "totalMatches": 1
   }
 }
 ```
@@ -653,7 +655,13 @@ Get list of available group learning challenges.
       "rewards": {
         "points": 500,
         "badge": "Python Pioneer"
-      }
+      },
+      "createdBy": "user_456",
+      "participants": [
+        "user_123",
+        "user_456"
+      ],
+      "createdAt": "2025-10-01T10:00:00Z"
     }
   ],
   "meta": {
@@ -678,7 +686,8 @@ Create a new group learning challenge.
   "topic": "react",
   "durationDays": 14,
   "maxParticipants": 15,
-  "difficulty": "intermediate"
+  "difficulty": "intermediate",
+  "startDate": "2025-11-01"
 }
 ```
 
@@ -818,6 +827,7 @@ Generate and send an AI-powered personalized motivation message.
   "success": true,
   "data": {
     "id": "boost_123",
+    "userId": "user_123",
     "message": "🔥 Amazing 5-day streak! You're building real momentum with React. Hooks can be tricky, but you're making great progress. Keep this energy going!",
     "type": "motivation",
     "createdAt": "2025-10-04T12:00:00Z"
@@ -825,6 +835,8 @@ Generate and send an AI-powered personalized motivation message.
   "message": "Motivation boost sent successfully"
 }
 ```
+
+**Valid Types:** `motivation`, `reminder`, `achievement`
 
 ---
 
@@ -844,20 +856,16 @@ Get recent motivation boosts.
   "data": [
     {
       "id": "boost_123",
+      "userId": "user_123",
       "message": "🔥 Amazing 5-day streak! You're building real momentum with React. Hooks can be tricky, but you're making great progress. Keep this going!",
-      "type": "motivation",
-      "streak": 5,
-      "points": 850,
-      "context": "React hooks",
+      "type": "achievement",
       "createdAt": "2025-10-04T12:00:00Z"
     },
     {
       "id": "boost_122",
+      "userId": "user_123",
       "message": "⚡ Great consistency yesterday—another focused 30 minutes logged!",
       "type": "motivation",
-      "streak": 4,
-      "points": 820,
-      "context": "daily learning",
       "createdAt": "2025-10-03T12:00:00Z"
     }
   ],
@@ -876,7 +884,7 @@ Get recent motivation boosts.
 Get user's habit-building challenges.
 
 **Query Parameters:**
-- `status`: 'active' | 'completed' (default: 'active')
+- `status`: 'active' | 'completed' | 'paused' (default: 'active')
 
 **Response:**
 ```json
@@ -899,7 +907,8 @@ Get user's habit-building challenges.
       "rewards": {
         "milestone5": "Early Bird Badge",
         "milestone10": "100 bonus points"
-      }
+      },
+      "createdAt": "2025-09-30T10:00:00Z"
     }
   ]
 }
@@ -918,7 +927,8 @@ Start a new personal habit challenge.
   "name": "Complete 1 concept daily",
   "description": "Finish at least one learning concept every day",
   "type": "concept_completion",
-  "targetValue": 1
+  "targetValue": 1,
+  "duration": 30
 }
 ```
 
@@ -1011,6 +1021,7 @@ Generate an AI-powered personalized career roadmap.
   "success": true,
   "data": {
     "id": "roadmap_1",
+    "userId": "user_123",
     "careerGoal": "Full Stack Developer",
     "overview": "Comprehensive path to becoming a full-stack developer",
     "phases": [
@@ -1021,7 +1032,8 @@ Generate an AI-powered personalized career roadmap.
         "description": "Master frontend technologies",
         "skills": ["React", "TypeScript", "Tailwind CSS"],
         "milestones": ["Build 3 frontend projects", "Deploy to production"],
-        "resources": ["Online courses", "Documentation", "Practice projects"]
+        "resources": ["Online courses", "Documentation", "Practice projects"],
+        "completed": false
       },
       {
         "phase": 2,
@@ -1030,7 +1042,8 @@ Generate an AI-powered personalized career roadmap.
         "description": "Learn server-side development",
         "skills": ["Node.js", "Express", "PostgreSQL"],
         "milestones": ["Build REST API", "Database design"],
-        "resources": ["Backend courses", "API documentation"]
+        "resources": ["Backend courses", "API documentation"],
+        "completed": false
       }
     ],
     "requiredSkills": {
@@ -1116,6 +1129,7 @@ Generate an AI-powered quiz for a topic.
   "success": true,
   "data": {
     "quizId": "quiz_123",
+    "userId": "user_123",
     "topic": "React Hooks",
     "difficulty": "medium",
     "questions": [
@@ -1147,7 +1161,8 @@ Generate an AI-powered quiz for a topic.
     "estimatedMinutes": 10,
     "attempts": 0,
     "bestScore": null,
-    "createdAt": "2025-10-04T12:00:00Z"
+    "createdAt": "2025-10-04T12:00:00Z",
+    "status": "active"
   },
   "message": "Quiz generated successfully"
 }
@@ -1171,12 +1186,14 @@ Get user's quizzes.
   "data": [
     {
       "quizId": "quiz_1",
+      "userId": "user_123",
       "topic": "React Hooks",
       "difficulty": "medium",
       "totalPoints": 50,
       "attempts": 2,
       "bestScore": 85,
-      "createdAt": "2025-10-03T10:00:00Z"
+      "createdAt": "2025-10-03T10:00:00Z",
+      "status": "completed"
     }
   ]
 }
@@ -1208,6 +1225,7 @@ Submit quiz answers and get results.
   "data": {
     "submissionId": "sub_456",
     "quizId": "quiz_123",
+    "userId": "user_123",
     "results": [
       {
         "questionId": "q1",
@@ -1249,6 +1267,8 @@ Get AI-powered personalized learning resource recommendations.
 - `topic`: Topic to get recommendations for (required)
 - `learningStyle`: 'visual' | 'auditory' | 'kinesthetic' | 'reading' (optional)
 - `difficulty`: 'beginner' | 'intermediate' | 'advanced' (default: 'beginner')
+
+**Valid Types:** `video`, `article`, `interactive`, `course`, `documentation`
 
 **Response:**
 ```json
@@ -1328,7 +1348,9 @@ Save feedback on a recommended resource.
   "success": true,
   "data": {
     "id": "feedback_123",
+    "userId": "user_123",
     "resourceUrl": "https://react.dev/learn",
+    "resourceTitle": "React Official Tutorial",
     "action": "completed",
     "rating": 5,
     "createdAt": "2025-10-04T12:00:00Z"
@@ -1362,6 +1384,8 @@ Generate alternate learning paths based on preferences.
 - `fast-track`: Condensed, essential concepts only
 - `comprehensive`: Detailed coverage with examples
 
+**Valid Step Types:** `project`, `video`, `reading`, `exercise`, `quiz`
+
 **Response:**
 ```json
 {
@@ -1371,6 +1395,7 @@ Generate alternate learning paths based on preferences.
     "branches": [
       {
         "id": "branch_1",
+        "pathId": "path_123",
         "name": "Project-Based Path",
         "type": "project-based",
         "description": "Learn by building real projects",
@@ -1387,10 +1412,13 @@ Generate alternate learning paths based on preferences.
           }
         ],
         "projects": ["To-Do App", "Weather Dashboard", "Blog Platform"],
-        "outcomes": ["Practical experience", "Portfolio projects", "Real-world skills"]
+        "outcomes": ["Practical experience", "Portfolio projects", "Real-world skills"],
+        "isActive": true,
+        "progress": 0
       },
       {
         "id": "branch_2",
+        "pathId": "path_123",
         "name": "Theory-First Path",
         "type": "theory-heavy",
         "description": "Deep dive into concepts before coding",
@@ -1407,11 +1435,15 @@ Generate alternate learning paths based on preferences.
           }
         ],
         "projects": [],
-        "outcomes": ["Strong foundation", "Conceptual clarity", "Interview readiness"]
+        "outcomes": ["Strong foundation", "Conceptual clarity", "Interview readiness"],
+        "isActive": false,
+        "progress": 0
       }
     ],
     "recommendation": "Project-Based Path is recommended for hands-on learners",
-    "createdAt": "2025-10-04T12:00:00Z"
+    "userId": "user_123",
+    "createdAt": "2025-10-04T12:00:00Z",
+    "status": "success"
   },
   "message": "Learning branches generated successfully"
 }
@@ -1467,6 +1499,11 @@ Get available branches for a learning path.
       "name": "Project-Based Path",
       "type": "project-based",
       "description": "Learn by building",
+      "difficulty": "intermediate",
+      "estimatedHours": 20,
+      "steps": [],
+      "projects": ["Project 1"],
+      "outcomes": ["Skill 1"],
       "isActive": true,
       "progress": 45
     },
@@ -1476,6 +1513,11 @@ Get available branches for a learning path.
       "name": "Theory-First Path",
       "type": "theory-heavy",
       "description": "Deep conceptual understanding",
+      "difficulty": "intermediate",
+      "estimatedHours": 25,
+      "steps": [],
+      "projects": [],
+      "outcomes": ["Skill 2"],
       "isActive": false,
       "progress": 0
     }
