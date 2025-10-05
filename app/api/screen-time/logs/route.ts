@@ -7,36 +7,28 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, Timestamp, orderBy } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date'); // Format: YYYY-MM-DD
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
     const logsRef = collection(db, 'screenTimeLogs');
-    let q = query(logsRef, where('userId', '==', user.uid), orderBy('startTime', 'desc'));
+    let q = query(logsRef, where('userId', '==', auth.uid), orderBy('startTime', 'desc'));
 
     if (date) {
-      q = query(logsRef, where('userId', '==', user.uid), where('date', '==', date));
+      q = query(logsRef, where('userId', '==', auth.uid), where('date', '==', date));
     } else if (startDate && endDate) {
       const start = Timestamp.fromDate(new Date(startDate));
       const end = Timestamp.fromDate(new Date(endDate));
       q = query(
         logsRef,
-        where('userId', '==', user.uid),
+        where('userId', '==', auth.uid),
         where('startTime', '>=', start),
         where('startTime', '<=', end)
       );
@@ -61,19 +53,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { appName, appCategory, durationMinutes, date } = body;
 
@@ -97,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     const logsRef = collection(db, 'screenTimeLogs');
     const docRef = await addDoc(logsRef, {
-      userId: user.uid,
+      userId: auth.uid,
       appName,
       appCategory,
       durationMinutes,
@@ -110,7 +93,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         id: docRef.id,
-        userId: user.uid,
+        userId: auth.uid,
         appName,
         appCategory,
         durationMinutes,
@@ -125,4 +108,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
