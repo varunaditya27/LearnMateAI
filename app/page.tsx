@@ -18,16 +18,13 @@ export default function Home() {
           <h1 className="text-6xl font-heading font-bold mb-12">
             📚 LearnMate
           </h1>
-          <br/>
           <p className="text-2xl mb-10 font-medium">
             AI That Makes Learning Addictive
           </p>
-          <br/>
           <p className="text-lg opacity-90 max-w-3xl mx-auto mb-16 leading-relaxed px-4">
             Your personal AI-powered learning companion. Structured paths, smart reminders,
             gamified progress tracking, and community-driven growth.
           </p>
-          <br/>
           
           {/* PROPER RECTANGULAR BUTTONS WITH CENTERED TEXT */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center w-full max-w-2xl">

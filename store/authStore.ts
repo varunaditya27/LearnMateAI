@@ -3,9 +3,6 @@
  * 
  * Global state management for user authentication using Zustand.
  * Provides auth state and helper functions across the app.
- * 
- * TODO: Add loading states for better UX
- * TODO: Add error handling and retry logic
  */
 
 import { create } from 'zustand';
@@ -17,7 +14,7 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   setUser: (user: User | null) => void;
-  initialize: () => void;
+  initialize: () => (() => void) | undefined;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -32,8 +29,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   }),
   
   initialize: () => {
+    // Set a safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      set((state) => {
+        // Only update if still loading
+        if (state.isLoading) {
+          console.warn('[AuthStore] Auth initialization timeout - setting loading to false');
+          return { isLoading: false };
+        }
+        return state;
+      });
+    }, 3000); // 3 second timeout
+
     // Subscribe to auth state changes
     const unsubscribe = subscribeToAuthChanges((user) => {
+      clearTimeout(safetyTimeout);
       set({ 
         user, 
         isAuthenticated: !!user,
@@ -42,6 +52,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
     
     // Return cleanup function
-    return unsubscribe;
+    return () => {
+      clearTimeout(safetyTimeout);
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   },
 }));

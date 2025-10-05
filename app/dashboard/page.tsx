@@ -1,83 +1,199 @@
 /**
  * Main Dashboard Page
  * 
- * Consistent greyish theme with improved button UX
+ * Integrated with backend APIs for real-time data
  */
 
 'use client';
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
+
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { ProgressTracker } from '@/components/dashboard/ProgressTracker';
 import { Leaderboard } from '@/components/dashboard/Leaderboard';
 import { ScreenTimeWidget } from '@/components/dashboard/ScreenTimeWidget';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import Link from 'next/link';
-import { mockLeaderboardData } from '@/lib/mockData';
+import { api } from '@/services/api';
+import type { LearningPath } from '@/types';
+
+type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all-time';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
 
-export default function DashboardPage() {
-  const mockUserStats = {
-    completedConcepts: 12,
-    totalConcepts: 45,
-    currentStreak: 5,
-    longestStreak: 12,
-    totalPoints: 850,
-    level: 4,
-  };
+const LEADERBOARD_TIMEFRAME_OPTIONS: Array<{ label: string; value: LeaderboardTimeframe }> = [
+  { label: 'This Week', value: 'weekly' },
+  { label: 'This Month', value: 'monthly' },
+  { label: 'All Time', value: 'all-time' },
+];
 
-  const recentActivity = [
+const fetchDashboardOverview = async () => {
+  console.log('[fetchDashboardOverview] Starting...');
+  try {
+    console.log('[fetchDashboardOverview] Calling api.dashboard.getOverview()...');
+    const response = await api.dashboard.getOverview();
+    console.log('[fetchDashboardOverview] Response received:', response);
+
+    if (response.success && response.data) {
+      console.log('[fetchDashboardOverview] Success, returning data');
+      return response.data;
+    }
+    const message = response.error ?? 'Failed to fetch dashboard overview';
+    console.log('[fetchDashboardOverview] Error:', message);
+    if (message.toLowerCase().includes('not authenticated')) {
+      throw new Error('Please sign in to view your dashboard.');
+    }
+
+    throw new Error(message);
+  } catch (error) {
+    console.error('[fetchDashboardOverview] Exception caught:', error);
+    throw error;
+  }
+};
+
+const fetchLeaderboardData = async (timeframe: LeaderboardTimeframe) => {
+  const response = await api.leaderboard.getLeaderboard(timeframe, 10);
+
+  if (response.success && response.data) {
+    return response.data;
+  }
+  const message = response.error ?? 'Failed to fetch leaderboard';
+  if (message.toLowerCase().includes('not authenticated')) {
+    throw new Error('Sign in to compare with the leaderboard.');
+  }
+
+  throw new Error(message);
+};
+
+export default function DashboardPage() {
+  const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuthGuard();
+  const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('weekly');
+
+  const isReady = isAuthenticated && !authLoading;
+
+  const {
+    data: dashboardData,
+    loading: overviewLoading,
+    error: overviewError,
+    refetch: refetchOverview,
+  } = useAsyncData(fetchDashboardOverview, {
+    enabled: isReady,
+    immediate: isReady,
+    cacheKey: 'dashboard-overview',
+    watch: [isReady],
+  });
+
+  const {
+    data: leaderboardEntries,
+    loading: leaderboardLoading,
+    error: leaderboardError,
+    refetch: refetchLeaderboard,
+  } = useAsyncData(
+    () => fetchLeaderboardData(timeframe),
     {
-      id: '1',
-      title: 'Understanding React Hooks',
-      thumbnail: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=225&fit=crop',
-      progress: 75,
-      duration: '12:30',
-      totalDuration: '18:00',
-    },
-    {
-      id: '2',
-      title: 'TypeScript Best Practices',
-      thumbnail: 'https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=400&h=225&fit=crop',
-      progress: 100,
-      duration: '15:45',
-      totalDuration: '15:45',
-    },
-    {
-      id: '3',
-      title: 'Next.js App Router Guide',
-      thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=225&fit=crop',
-      progress: 45,
-      duration: '8:20',
-      totalDuration: '20:00',
-    },
-    {
-      id: '4',
-      title: 'State Management Patterns',
-      thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=225&fit=crop',
-      progress: 30,
-      duration: '5:10',
-      totalDuration: '16:30',
-    },
-  ];
+      enabled: isReady,
+      immediate: isReady,
+      cacheKey: `leaderboard-${timeframe}`,
+      watch: [timeframe, isReady],
+    }
+  );
+
+  const handleTimeframeChange = useCallback((value: LeaderboardTimeframe) => {
+    setTimeframe(value);
+  }, []);
+
+  const isInitialLoading = authLoading || (overviewLoading && !dashboardData);
+
+  // Debug logging
+  if (typeof window !== 'undefined') {
+    console.log('[Dashboard] Auth state:', {
+      authLoading,
+      isAuthenticated,
+      hasUser: !!authUser,
+      overviewLoading,
+      hasDashboardData: !!dashboardData,
+      overviewError,
+      isReady,
+    });
+  }
+
+  if (isInitialLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              className="w-16 h-16 mx-auto border-4 border-[var(--primary)] border-t-transparent rounded-full"
+            />
+            <p className="text-[var(--muted-foreground)] text-lg">Loading your dashboard...</p>
+            {authLoading && <p className="text-sm text-[var(--muted-foreground)]">Checking authentication...</p>}
+            {!authLoading && overviewLoading && <p className="text-sm text-[var(--muted-foreground)]">Fetching your data...</p>}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  if (!dashboardData) {
+    const message = overviewError ?? 'Unable to load dashboard';
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="max-w-md">
+            <CardContent className="text-center py-12">
+              <div className="text-6xl mb-6">⚠️</div>
+              <h2 className="text-2xl font-bold mb-4">Oops! Something went wrong</h2>
+              <p className="text-[var(--muted-foreground)] mb-6">{message}</p>
+              <Button variant="primary" onClick={refetchOverview}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const { user, stats, activePaths, todayActivity } = dashboardData;
+
+  const resolvedPaths: LearningPath[] = activePaths ?? [];
+  const completedConcepts = stats?.completedConcepts ?? 0;
+  const totalConcepts = resolvedPaths.reduce(
+    (sum, path) => sum + (path.steps?.length ?? 0),
+    0
+  ) || 45;
+
+  const screenTimeMinutes = todayActivity?.screenTimeMinutes ?? 0;
+  const dailyGoalMinutes = Math.max(todayActivity?.dailyGoalMinutes ?? 60, 1);
+  const computedProgress = Math.min(
+    todayActivity?.dailyGoalProgress ?? (screenTimeMinutes / Math.max(dailyGoalMinutes, 1)) * 100,
+    100
+  );
 
   return (
     <DashboardLayout>
-  <div className="space-y-12 mt-12 px-4">    
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={fadeIn}
-      transition={{ duration: 0.5 }}
-    >
-      <h1 className="text-4xl lg:text-5xl font-bold mb-3 px-2">
-            Welcome back
+      <div className="space-y-12 mt-12 px-4">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-4xl lg:text-5xl font-bold mb-3 px-2">
+            Welcome back, {(user?.displayName || authUser?.displayName || 'there')}
           </h1>
           <p className="text-lg text-[var(--muted-foreground)] px-2">
             Continue your learning journey
@@ -91,78 +207,85 @@ export default function DashboardPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          {/* Today's Challenge - Same card style */}
           <Card>
             <CardHeader>
-              <CardTitle>Today's Challenge</CardTitle>
+              <CardTitle>Today&apos;s Challenge</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-[var(--muted-foreground)] mb-6">
-                Complete 3 concepts to maintain your streak
+                Complete {dailyGoalMinutes} minutes to reach your daily goal
               </p>
               <div className="flex items-center gap-4">
                 <div className="flex-1 bg-[var(--muted)] rounded-full h-3 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: '33%' }}
+                    animate={{ width: `${computedProgress}%` }}
                     transition={{ duration: 1, ease: 'easeOut' }}
                     className="h-full bg-[var(--primary)] rounded-full"
                   />
                 </div>
-                <span className="font-bold text-xl">1/3</span>
+                <span className="font-bold text-xl">
+                  {screenTimeMinutes}/{dailyGoalMinutes}
+                </span>
               </div>
             </CardContent>
           </Card>
 
-          <ProgressTracker {...mockUserStats} />
+          <ProgressTracker
+            completedConcepts={completedConcepts}
+            totalConcepts={totalConcepts}
+            currentStreak={stats?.currentStreak ?? 0}
+            longestStreak={stats?.longestStreak ?? 0}
+            totalPoints={stats?.totalPoints ?? 0}
+            level={stats?.level ?? 1}
+          />
         </motion.div>
 
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeIn}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
-          <h2 className="text-3xl font-bold mb-6">Continue Watching</h2>
-          <div className="overflow-x-auto">
-            <div className="flex gap-6 pb-4">
-              {recentActivity.map((activity, index) => (
+        {resolvedPaths.length > 0 && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeIn}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <h2 className="text-3xl font-bold mb-6">Continue Learning</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {resolvedPaths.slice(0, 3).map((path, index) => (
                 <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  key={path.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
-                  className="flex-shrink-0 w-[320px] bg-[var(--card)] rounded-xl overflow-hidden border border-[var(--border)] shadow-sm hover:shadow-lg transition-shadow"
                 >
-                  <div className="relative">
-                    <img
-                      src={activity.thumbnail}
-                      alt={activity.title}
-                      className="w-full h-[180px] object-cover"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--muted)]">
-                      <div
-                        className="h-full bg-[var(--primary)]"
-                        style={{ width: `${activity.progress}%` }}
-                      />
-                    </div>
-                    <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/70 rounded text-white text-xs font-semibold">
-                      {activity.duration} / {activity.totalDuration}
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-3 line-clamp-2">
-                      {activity.title}
-                    </h3>
-                    <Button variant="primary" fullWidth>
-                      {activity.progress === 100 ? 'Watch Again' : 'Continue'}
-                    </Button>
-                  </div>
+                  <Link href={`/dashboard/learning/paths/${path.id}`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
+                      <CardHeader>
+                        <CardTitle className="line-clamp-2">{path.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-[var(--muted-foreground)] mb-4 line-clamp-2">
+                          {path.description || 'Continue your learning journey'}
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Progress</span>
+                            <span className="font-semibold">{path.progress}%</span>
+                          </div>
+                          <div className="w-full bg-[var(--muted)] rounded-full h-2 overflow-hidden">
+                            <div
+                              className="h-full bg-[var(--primary)] rounded-full"
+                              style={{ width: `${path.progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 </motion.div>
               ))}
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         <motion.div
           initial="hidden"
@@ -178,19 +301,21 @@ export default function DashboardPage() {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Link href="/dashboard/learning">
+              <Link href="/dashboard/learning/generate">
                 <Button variant="primary" fullWidth leftIcon={<span>🎯</span>}>
                   Start New Learning Path
                 </Button>
               </Link>
-              <Link href="/dashboard/progress">
-                <Button variant="secondary" fullWidth leftIcon={<span>📈</span>}>
-                  View Your Progress
+              <Link href="/dashboard/learning/paths">
+                <Button variant="secondary" fullWidth leftIcon={<span>📚</span>}>
+                  View All Paths
                 </Button>
               </Link>
-              <Button variant="outline" fullWidth leftIcon={<span>💡</span>}>
-                Ask AI a Question
-              </Button>
+              <Link href="/dashboard/quiz/generate">
+                <Button variant="outline" fullWidth leftIcon={<span>📝</span>}>
+                  Take a Quiz
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </motion.div>
@@ -201,7 +326,16 @@ export default function DashboardPage() {
           variants={fadeIn}
           transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <Leaderboard entries={mockLeaderboardData} />
+          <Leaderboard
+            entries={leaderboardEntries ?? []}
+            currentUserId={user?.id ?? authUser?.id}
+            timeframe={timeframe}
+            timeframeOptions={LEADERBOARD_TIMEFRAME_OPTIONS}
+            onTimeframeChange={handleTimeframeChange}
+            loading={leaderboardLoading}
+            errorMessage={leaderboardError ?? undefined}
+            onRefresh={refetchLeaderboard}
+          />
         </motion.div>
 
         <motion.p
