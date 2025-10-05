@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { api } from '@/services/api';
+import { StudyBuddySystem } from '@/components/community/StudyBuddySystem';
 import type { GroupChallenge, Discussion, StudyBuddyMatch } from '@/types/api';
 
 const fadeIn = {
@@ -599,111 +600,7 @@ export default function CommunityPage() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="grid grid-cols-1 xl:grid-cols-2 gap-6"
         >
-          <Card className="h-full">
-            <CardHeader>
-              <CardTitle>Find a Study Buddy</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handleMatchSubmit}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Topic</label>
-                    <select
-                      value={matchForm.topic}
-                      onChange={(event) => setMatchForm((prev) => ({ ...prev, topic: event.target.value }))}
-                      className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
-                    >
-                      {matchTopics.map((topic) => (
-                        <option key={topic} value={topic}>
-                          {topic}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Timezone</label>
-                    <select
-                      value={matchForm.timezone}
-                      onChange={(event) => setMatchForm((prev) => ({ ...prev, timezone: event.target.value }))}
-                      className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
-                    >
-                      {timezones.map((tz) => (
-                        <option key={tz} value={tz}>
-                          {tz}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Preferred Pace</label>
-                    <select
-                      value={matchForm.pace}
-                      onChange={(event) => setMatchForm((prev) => ({ ...prev, pace: event.target.value as typeof prev.pace }))}
-                      className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
-                    >
-                      {paceOptions.map((pace) => (
-                        <option key={pace} value={pace}>
-                          {pace}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Skill Level</label>
-                    <select
-                      value={matchForm.skillLevel}
-                      onChange={(event) => setMatchForm((prev) => ({ ...prev, skillLevel: event.target.value as typeof prev.skillLevel }))}
-                      className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
-                    >
-                      {skillLevels.map((level) => (
-                        <option key={level} value={level}>
-                          {level}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    We&apos;ll match you with learners who share similar goals and schedules.
-                  </p>
-                  <Button type="submit" variant="primary" isLoading={matchLoading}>
-                    Find Matches
-                  </Button>
-                </div>
-              </form>
-
-              {matchError && (
-                <div className="mt-4 p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-600 text-sm">
-                  {matchError}
-                </div>
-              )}
-
-              <div className="mt-6 space-y-4">
-                {matchResults.length === 0 && !matchLoading ? (
-                  <p className="text-sm text-[var(--muted-foreground)]">No matches yet. Submit the form to discover your next study buddy!</p>
-                ) : (
-                  matchResults.map((match) => (
-                    <div key={match.userId} className="p-4 border border-[var(--border)] rounded-xl bg-[var(--card)] hover:border-[var(--primary)]/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-semibold text-[var(--foreground)]">{match.displayName}</h3>
-                          <p className="text-xs text-[var(--muted-foreground)]">
-                            {match.topic} • {match.skillLevel}
-                            {match.studyPreferences?.timezone && ` • ${match.studyPreferences.timezone}`}
-                            {match.studyPreferences?.pace && ` • ${match.studyPreferences.pace} pace`}
-                          </p>
-                        </div>
-                        <Badge variant="accent">{match.matchScore}% Match</Badge>
-                      </div>
-                      <p className="mt-3 text-sm text-[var(--muted-foreground)]">{match.matchReason}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <StudyBuddySystem isReady={isReady} />
 
           <Card className="h-full">
             <CardHeader>

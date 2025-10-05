@@ -537,6 +537,134 @@ export const communityApi = {
       };
     }>>('/api/community/challenges/my-challenges');
   },
+
+  // Study Buddy APIs
+  async createStudyBuddyRequest(request: {
+    topic: string;
+    timezone: string;
+    pace: 'slow' | 'medium' | 'fast';
+    skillLevel: 'beginner' | 'intermediate' | 'advanced';
+    description?: string;
+    availability?: string[];
+  }) {
+    return apiCall<{
+      id: string;
+      userId: string;
+      userName: string;
+      topic: string;
+      timezone: string;
+      pace: string;
+      skillLevel: string;
+      description: string;
+      availability: string[];
+      status: 'active';
+      createdAt: string;
+    }>('/api/community/study-buddy/requests', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  },
+
+  async getStudyBuddyRequests(filters?: {
+    topic?: string;
+    pace?: string;
+    skillLevel?: string;
+    limit?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.topic) params.append('topic', filters.topic);
+    if (filters?.pace) params.append('pace', filters.pace);
+    if (filters?.skillLevel) params.append('skillLevel', filters.skillLevel);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const queryString = params.toString();
+    return apiCall<Array<{
+      id: string;
+      userId: string;
+      userName: string;
+      userEmail: string | null;
+      userPhotoURL: string | null;
+      topic: string;
+      timezone: string;
+      pace: string;
+      skillLevel: string;
+      description: string;
+      availability: string[];
+      status: 'active';
+      createdAt: string;
+      updatedAt: string;
+    }>>(`/api/community/study-buddy/requests${queryString ? `?${queryString}` : ''}`);
+  },
+
+  async cancelStudyBuddyRequest(requestId: string) {
+    return apiCall<{ message: string }>(
+      `/api/community/study-buddy/requests?requestId=${requestId}`,
+      { method: 'DELETE' }
+    );
+  },
+
+  async sendConnectionRequest(recipientId: string, message?: string) {
+    return apiCall<{
+      id: string;
+      senderId: string;
+      recipientId: string;
+      message: string;
+      status: 'pending';
+      createdAt: string;
+    }>('/api/community/study-buddy/connections', {
+      method: 'POST',
+      body: JSON.stringify({ recipientId, message }),
+    });
+  },
+
+  async getConnectionRequests(filters?: {
+    type?: 'incoming' | 'outgoing' | 'all';
+    status?: 'pending' | 'accepted' | 'rejected' | 'all';
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.type) params.append('type', filters.type);
+    if (filters?.status) params.append('status', filters.status);
+
+    const queryString = params.toString();
+    return apiCall<Array<{
+      id: string;
+      senderId: string;
+      senderName: string;
+      senderEmail: string | null;
+      senderPhotoURL: string | null;
+      recipientId: string;
+      recipientName: string;
+      recipientEmail: string | null;
+      recipientPhotoURL: string | null;
+      message: string;
+      status: 'pending' | 'accepted' | 'rejected';
+      type: 'incoming' | 'outgoing';
+      createdAt: string;
+      updatedAt: string;
+    }>>(`/api/community/study-buddy/connections${queryString ? `?${queryString}` : ''}`);
+  },
+
+  async respondToConnectionRequest(connectionId: string, action: 'accept' | 'reject') {
+    return apiCall<{
+      id: string;
+      status: 'accepted' | 'rejected';
+    }>('/api/community/study-buddy/connections', {
+      method: 'PATCH',
+      body: JSON.stringify({ connectionId, action }),
+    });
+  },
+
+  async getMyStudyBuddies() {
+    return apiCall<Array<{
+      connectionId: string;
+      buddyId: string;
+      buddyName: string;
+      buddyEmail: string | null;
+      buddyPhotoURL: string | null;
+      connectedAt: string;
+      message: string;
+    }>>('/api/community/study-buddy/my-buddies');
+  },
 };
 
 // ============================================
