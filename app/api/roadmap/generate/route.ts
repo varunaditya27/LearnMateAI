@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
     
     const systemPrompt = `You are an expert career counselor and learning path architect. Generate a comprehensive, actionable career roadmap.
 

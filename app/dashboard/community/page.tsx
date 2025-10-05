@@ -93,6 +93,41 @@ export default function CommunityPage() {
   const [joiningChallengeId, setJoiningChallengeId] = useState<string | null>(null);
   const [joinFeedback, setJoinFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  const [showChallengeForm, setShowChallengeForm] = useState(false);
+  const [challengeForm, setChallengeForm] = useState({
+    name: '',
+    description: '',
+    topic: matchTopics[0],
+    durationDays: 7,
+    maxParticipants: 20,
+    difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
+  });
+  const [challengeLoading, setChallengeLoading] = useState(false);
+  const [challengeError, setChallengeError] = useState<string | null>(null);
+
+  const [showDiscussionForm, setShowDiscussionForm] = useState(false);
+  const [discussionForm, setDiscussionForm] = useState({
+    title: '',
+    content: '',
+    topic: matchTopics[0],
+    tags: '',
+  });
+  const [discussionLoading, setDiscussionLoading] = useState(false);
+  const [discussionError, setDiscussionError] = useState<string | null>(null);
+
+  const [joinedChallenges, setJoinedChallenges] = useState<Set<string>>(new Set());
+  const [expandedDiscussions, setExpandedDiscussions] = useState<Set<string>>(new Set());
+  const [discussionReplies, setDiscussionReplies] = useState<Record<string, Array<{
+    id: string;
+    content: string;
+    author: { displayName: string; photoURL: string | null };
+    createdAt: string;
+  }>>>({});
+  const [replyForms, setReplyForms] = useState<Record<string, string>>({});
+  const [replyLoading, setReplyLoading] = useState<Record<string, boolean>>({});
+  const [likedDiscussions, setLikedDiscussions] = useState<Set<string>>(new Set());
+  const [likingDiscussions, setLikingDiscussions] = useState<Set<string>>(new Set());
+
   const isInitialLoading = authLoading || ((challengesLoading || discussionsLoading) && !challenges && !discussions);
 
   const handleRefresh = useCallback(async () => {
@@ -126,7 +161,11 @@ export default function CommunityPage() {
     try {
       const response = await api.community.joinChallenge(challengeId);
       if (response.success) {
-        setJoinFeedback({ type: 'success', message: 'You successfully joined the challenge!' });
+        setJoinedChallenges(prev => new Set(prev).add(challengeId));
+        setJoinFeedback({ 
+          type: 'success', 
+          message: '🎉 You successfully joined the challenge! Check your dashboard progress tracker to start learning.' 
+        });
         await refetchChallenges();
       } else {
         throw new Error(extractErrorMessage(response.error, 'Unable to join challenge'));
@@ -135,6 +174,166 @@ export default function CommunityPage() {
       setJoinFeedback({ type: 'error', message: extractErrorMessage(error, 'Unable to join challenge') });
     } finally {
       setJoiningChallengeId(null);
+    }
+  };
+
+  const handleLikeDiscussion = async (discussionId: string) => {
+    if (likingDiscussions.has(discussionId)) return;
+
+    setLikingDiscussions(prev => new Set(prev).add(discussionId));
+
+    try {
+      const response = await api.community.likeDiscussion(discussionId);
+      if (response.success && response.data) {
+        if (response.data.liked) {
+          setLikedDiscussions(prev => new Set(prev).add(discussionId));
+        } else {
+          setLikedDiscussions(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(discussionId);
+            return newSet;
+          });
+        }
+        await refetchDiscussions();
+      }
+    } catch (error) {
+      console.error('Failed to like discussion:', error);
+    } finally {
+      setLikingDiscussions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(discussionId);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleDiscussionReplies = async (discussionId: string) => {
+    if (expandedDiscussions.has(discussionId)) {
+      // Collapse
+      setExpandedDiscussions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(discussionId);
+        return newSet;
+      });
+    } else {
+      // Expand and fetch replies
+      setExpandedDiscussions(prev => new Set(prev).add(discussionId));
+      
+      try {
+        const response = await api.community.getReplies(discussionId);
+        if (response.success && response.data) {
+          setDiscussionReplies(prev => ({
+            ...prev,
+            [discussionId]: response.data || [],
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch replies:', error);
+      }
+    }
+  };
+
+  const handlePostReply = async (discussionId: string) => {
+    const content = replyForms[discussionId]?.trim();
+    if (!content) return;
+
+    setReplyLoading(prev => ({ ...prev, [discussionId]: true }));
+
+    try {
+      const response = await api.community.postReply(discussionId, content);
+      if (response.success && response.data) {
+        // Add new reply to the list
+        setDiscussionReplies(prev => {
+          const existingReplies = prev[discussionId] || [];
+          return {
+            ...prev,
+            [discussionId]: [...existingReplies, response.data!],
+          };
+        });
+        // Clear form
+        setReplyForms(prev => ({ ...prev, [discussionId]: '' }));
+        // Refresh to update reply count
+        await refetchDiscussions();
+      }
+    } catch (error) {
+      console.error('Failed to post reply:', error);
+    } finally {
+      setReplyLoading(prev => ({ ...prev, [discussionId]: false }));
+    }
+  };
+
+  const handleCreateChallenge = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setChallengeLoading(true);
+    setChallengeError(null);
+
+    try {
+      const response = await api.community.createChallenge({
+        name: challengeForm.name,
+        description: challengeForm.description,
+        topic: challengeForm.topic,
+        durationDays: challengeForm.durationDays,
+        maxParticipants: challengeForm.maxParticipants,
+        difficulty: challengeForm.difficulty,
+      });
+
+      if (response.success) {
+        setShowChallengeForm(false);
+        setChallengeForm({
+          name: '',
+          description: '',
+          topic: matchTopics[0],
+          durationDays: 7,
+          maxParticipants: 20,
+          difficulty: 'beginner',
+        });
+        await refetchChallenges();
+        setJoinFeedback({ type: 'success', message: 'Challenge created successfully!' });
+      } else {
+        throw new Error(extractErrorMessage(response.error, 'Unable to create challenge'));
+      }
+    } catch (error) {
+      setChallengeError(extractErrorMessage(error, 'Unable to create challenge'));
+    } finally {
+      setChallengeLoading(false);
+    }
+  };
+
+  const handleCreateDiscussion = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDiscussionLoading(true);
+    setDiscussionError(null);
+
+    try {
+      const tags = discussionForm.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+      const response = await api.community.createDiscussion({
+        title: discussionForm.title,
+        content: discussionForm.content,
+        topic: discussionForm.topic,
+        tags,
+      });
+
+      if (response.success) {
+        setShowDiscussionForm(false);
+        setDiscussionForm({
+          title: '',
+          content: '',
+          topic: matchTopics[0],
+          tags: '',
+        });
+        await refetchDiscussions();
+        setJoinFeedback({ type: 'success', message: 'Discussion posted successfully!' });
+      } else {
+        throw new Error(extractErrorMessage(response.error, 'Unable to create discussion'));
+      }
+    } catch (error) {
+      setDiscussionError(extractErrorMessage(error, 'Unable to create discussion'));
+    } finally {
+      setDiscussionLoading(false);
     }
   };
 
@@ -212,6 +411,121 @@ export default function CommunityPage() {
           </motion.div>
         )}
 
+        {/* Create Challenge Section */}
+        <motion.section
+          initial="hidden"
+          animate="visible"
+          variants={fadeIn}
+          transition={{ duration: 0.5, delay: 0.02 }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Create a New Challenge</CardTitle>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowChallengeForm(!showChallengeForm)}
+                >
+                  {showChallengeForm ? 'Cancel' : 'New Challenge'}
+                </Button>
+              </div>
+            </CardHeader>
+            {showChallengeForm && (
+              <CardContent>
+                <form className="space-y-4" onSubmit={handleCreateChallenge}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">
+                        Challenge Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={challengeForm.name}
+                        onChange={(e) => setChallengeForm(prev => ({ ...prev, name: e.target.value }))}
+                        required
+                        placeholder="e.g., 30-Day React Mastery"
+                        className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">
+                        Description *
+                      </label>
+                      <textarea
+                        value={challengeForm.description}
+                        onChange={(e) => setChallengeForm(prev => ({ ...prev, description: e.target.value }))}
+                        required
+                        rows={3}
+                        placeholder="Describe the challenge goals and what participants will learn..."
+                        className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Topic *</label>
+                      <select
+                        value={challengeForm.topic}
+                        onChange={(e) => setChallengeForm(prev => ({ ...prev, topic: e.target.value }))}
+                        className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      >
+                        {matchTopics.map((topic) => (
+                          <option key={topic} value={topic}>{topic}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Difficulty</label>
+                      <select
+                        value={challengeForm.difficulty}
+                        onChange={(e) => setChallengeForm(prev => ({ ...prev, difficulty: e.target.value as typeof prev.difficulty }))}
+                        className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      >
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Duration (days)</label>
+                      <input
+                        type="number"
+                        value={challengeForm.durationDays}
+                        onChange={(e) => setChallengeForm(prev => ({ ...prev, durationDays: parseInt(e.target.value) || 7 }))}
+                        min={1}
+                        max={365}
+                        className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Max Participants</label>
+                      <input
+                        type="number"
+                        value={challengeForm.maxParticipants}
+                        onChange={(e) => setChallengeForm(prev => ({ ...prev, maxParticipants: parseInt(e.target.value) || 20 }))}
+                        min={2}
+                        max={1000}
+                        className="w-full px-3 py-3 rounded-xl border-2 border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                  </div>
+                  {challengeError && (
+                    <div className="p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-600 text-sm">
+                      {challengeError}
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      Rewards: {challengeForm.durationDays * 100} points
+                    </p>
+                    <Button type="submit" variant="primary" isLoading={challengeLoading}>
+                      Create Challenge
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            )}
+          </Card>
+        </motion.section>
+
         <motion.section
           initial="hidden"
           animate="visible"
@@ -256,13 +570,20 @@ export default function CommunityPage() {
                       </div>
                     </div>
                     <Button
-                      variant="primary"
+                      variant={joinedChallenges.has(challenge.id) ? "secondary" : "primary"}
                       fullWidth
                       isLoading={joiningChallengeId === challenge.id}
-                      disabled={joiningChallengeId !== null}
+                      disabled={joiningChallengeId !== null || joinedChallenges.has(challenge.id)}
                       onClick={() => handleJoinChallenge(challenge.id)}
                     >
-                      Join Challenge
+                      {joinedChallenges.has(challenge.id) ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          Joined
+                        </span>
+                      ) : 'Join Challenge'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -368,20 +689,15 @@ export default function CommunityPage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="text-lg font-semibold text-[var(--foreground)]">{match.displayName}</h3>
-                          <p className="text-xs text-[var(--muted-foreground)]">Timezone: {match.timezone} • Pace: {match.pace}</p>
+                          <p className="text-xs text-[var(--muted-foreground)]">
+                            {match.topic} • {match.skillLevel}
+                            {match.studyPreferences?.timezone && ` • ${match.studyPreferences.timezone}`}
+                            {match.studyPreferences?.pace && ` • ${match.studyPreferences.pace} pace`}
+                          </p>
                         </div>
-                        <Badge variant="accent">Match Score {match.matchScore}%</Badge>
+                        <Badge variant="accent">{match.matchScore}% Match</Badge>
                       </div>
                       <p className="mt-3 text-sm text-[var(--muted-foreground)]">{match.matchReason}</p>
-                      {match.interests?.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {match.interests.map((interest) => (
-                            <Badge key={interest} variant="secondary" size="sm">
-                              {interest}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   ))
                 )}
@@ -391,9 +707,82 @@ export default function CommunityPage() {
 
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>Latest Discussions</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Latest Discussions</CardTitle>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDiscussionForm(!showDiscussionForm)}
+                >
+                  {showDiscussionForm ? 'Cancel' : 'New Discussion'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {showDiscussionForm && (
+                <form className="space-y-4 p-4 border border-[var(--border)] rounded-xl bg-[var(--card)]" onSubmit={handleCreateDiscussion}>
+                  <div>
+                    <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">
+                      Discussion Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={discussionForm.title}
+                      onChange={(e) => setDiscussionForm(prev => ({ ...prev, title: e.target.value }))}
+                      required
+                      placeholder="e.g., Best practices for React hooks?"
+                      className="w-full px-3 py-2 rounded-lg border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">
+                      Content *
+                    </label>
+                    <textarea
+                      value={discussionForm.content}
+                      onChange={(e) => setDiscussionForm(prev => ({ ...prev, content: e.target.value }))}
+                      required
+                      rows={4}
+                      placeholder="Share your thoughts, questions, or insights..."
+                      className="w-full px-3 py-2 rounded-lg border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">Topic *</label>
+                      <select
+                        value={discussionForm.topic}
+                        onChange={(e) => setDiscussionForm(prev => ({ ...prev, topic: e.target.value }))}
+                        className="w-full px-3 py-2 rounded-lg border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      >
+                        {matchTopics.map((topic) => (
+                          <option key={topic} value={topic}>{topic}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-[var(--foreground)] mb-2">
+                        Tags (comma-separated)
+                      </label>
+                      <input
+                        type="text"
+                        value={discussionForm.tags}
+                        onChange={(e) => setDiscussionForm(prev => ({ ...prev, tags: e.target.value }))}
+                        placeholder="hooks, best-practices"
+                        className="w-full px-3 py-2 rounded-lg border-2 border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] focus:outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                  </div>
+                  {discussionError && (
+                    <div className="p-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-600 text-sm">
+                      {discussionError}
+                    </div>
+                  )}
+                  <Button type="submit" variant="primary" isLoading={discussionLoading} fullWidth>
+                    Post Discussion
+                  </Button>
+                </form>
+              )}
+
               {latestDiscussions.length === 0 ? (
                 <p className="text-sm text-[var(--muted-foreground)]">No discussions yet. Start the conversation by posting your questions!</p>
               ) : (
@@ -405,10 +794,36 @@ export default function CommunityPage() {
                     </div>
                     <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">{discussion.title}</h3>
                     <p className="text-sm text-[var(--muted-foreground)] line-clamp-3">{discussion.content}</p>
-                    <div className="mt-3 flex items-center gap-4 text-xs text-[var(--muted-foreground)]">
-                      <span>Replies: {discussion.replies}</span>
-                      <span>Likes: {discussion.likes}</span>
+                    
+                    {/* Interactive buttons */}
+                    <div className="mt-3 flex items-center gap-4">
+                      <button
+                        onClick={() => handleLikeDiscussion(discussion.id)}
+                        disabled={likingDiscussions.has(discussion.id)}
+                        className="flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors disabled:opacity-50"
+                      >
+                        <svg 
+                          className="w-4 h-4" 
+                          fill={likedDiscussions.has(discussion.id) ? "currentColor" : "none"}
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                        <span>{discussion.likes}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => toggleDiscussionReplies(discussion.id)}
+                        className="flex items-center gap-1 text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span>{discussion.replies} {expandedDiscussions.has(discussion.id) ? '▲' : '▼'}</span>
+                      </button>
                     </div>
+
                     {discussion.tags?.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-3">
                         {discussion.tags.map((tag) => (
@@ -416,6 +831,49 @@ export default function CommunityPage() {
                             #{tag}
                           </Badge>
                         ))}
+                      </div>
+                    )}
+
+                    {/* Reply section */}
+                    {expandedDiscussions.has(discussion.id) && (
+                      <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-3">
+                        {/* Reply form */}
+                        <div className="space-y-2">
+                          <textarea
+                            value={replyForms[discussion.id] || ''}
+                            onChange={(e) => setReplyForms(prev => ({ ...prev, [discussion.id]: e.target.value }))}
+                            placeholder="Write your reply..."
+                            rows={2}
+                            className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-[var(--foreground)] text-sm focus:outline-none focus:border-[var(--primary)]"
+                          />
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handlePostReply(discussion.id)}
+                            isLoading={replyLoading[discussion.id]}
+                            disabled={!replyForms[discussion.id]?.trim()}
+                          >
+                            Post Reply
+                          </Button>
+                        </div>
+
+                        {/* Replies list */}
+                        <div className="space-y-2">
+                          {discussionReplies[discussion.id]?.map((reply) => (
+                            <div key={reply.id} className="p-3 rounded-lg bg-[var(--card)] border border-[var(--border)]">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-[var(--foreground)]">{reply.author.displayName}</span>
+                                <span className="text-xs text-[var(--muted-foreground)]">
+                                  {new Date(reply.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-[var(--foreground)]">{reply.content}</p>
+                            </div>
+                          ))}
+                          {!discussionReplies[discussion.id] && (
+                            <p className="text-xs text-[var(--muted-foreground)] italic">Loading replies...</p>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
