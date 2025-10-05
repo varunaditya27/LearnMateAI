@@ -7,22 +7,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET() {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const pathsRef = collection(db, 'learningPaths');
-    const q = query(pathsRef, where('userId', '==', user.uid));
+    const q = query(pathsRef, where('userId', '==', auth.uid));
     const querySnapshot = await getDocs(q);
 
     const paths = querySnapshot.docs.map(doc => ({
@@ -42,19 +34,10 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { name, description, domainId, subdomainId, topicId, steps } = body;
 
@@ -67,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const pathsRef = collection(db, 'learningPaths');
     const docRef = await addDoc(pathsRef, {
-      userId: user.uid,
+      userId: auth.uid,
       name,
       description: description || '',
       domainId,
@@ -85,7 +68,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         id: docRef.id,
-        userId: user.uid,
+        userId: auth.uid,
         name,
         description,
         domainId,
@@ -104,4 +87,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

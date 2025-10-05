@@ -7,26 +7,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const conceptId = searchParams.get('conceptId');
     const resourceId = searchParams.get('resourceId');
 
     const progressRef = collection(db, 'progress');
-    let q = query(progressRef, where('userId', '==', user.uid));
+    let q = query(progressRef, where('userId', '==', auth.uid));
 
     if (conceptId) {
       q = query(q, where('conceptId', '==', conceptId));
@@ -55,19 +47,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { conceptId, resourceId, status, timeSpentMinutes, notes } = body;
 
@@ -82,7 +65,7 @@ export async function POST(request: NextRequest) {
     const progressRef = collection(db, 'progress');
     const q = query(
       progressRef,
-      where('userId', '==', user.uid),
+      where('userId', '==', auth.uid),
       where('conceptId', '==', conceptId),
       where('resourceId', '==', resourceId || null)
     );
@@ -125,7 +108,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Create new progress entry
       const newProgress = {
-        userId: user.uid,
+        userId: auth.uid,
         conceptId,
         resourceId: resourceId || null,
         status: status || 'not-started',
@@ -158,4 +141,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
