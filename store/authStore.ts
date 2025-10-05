@@ -2,7 +2,6 @@
  * Authentication Store
  * 
  * Global state management for user authentication using Zustand.
- * Provides auth state and helper functions across the app.
  */
 
 import { create } from 'zustand';
@@ -22,27 +21,32 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   isAuthenticated: false,
   
-  setUser: (user) => set({ 
-    user, 
-    isAuthenticated: !!user,
-    isLoading: false 
-  }),
+  setUser: (user) => {
+    console.log('[AuthStore] setUser called with:', user ? `User: ${user.displayName} (${user.id})` : 'null');
+    set({ 
+      user, 
+      isAuthenticated: !!user,
+      isLoading: false 
+    });
+  },
   
   initialize: () => {
+    console.log('[AuthStore] Initializing auth subscription...');
+    
     // Set a safety timeout to prevent infinite loading
     const safetyTimeout = setTimeout(() => {
       set((state) => {
-        // Only update if still loading
         if (state.isLoading) {
-          console.warn('[AuthStore] Auth initialization timeout - setting loading to false');
+          console.warn('[AuthStore] Safety timeout triggered - setting loading to false');
           return { isLoading: false };
         }
         return state;
       });
-    }, 3000); // 3 second timeout
+    }, 3000);
 
     // Subscribe to auth state changes
     const unsubscribe = subscribeToAuthChanges((user) => {
+      console.log('[AuthStore] Auth state changed:', user ? `User: ${user.displayName} (${user.id})` : 'No user');
       clearTimeout(safetyTimeout);
       set({ 
         user, 
@@ -53,6 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     
     // Return cleanup function
     return () => {
+      console.log('[AuthStore] Cleaning up auth subscription');
       clearTimeout(safetyTimeout);
       if (unsubscribe) {
         unsubscribe();
