@@ -7,21 +7,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
-    const userDocRef = doc(db, 'users', user.uid);
+    const userDocRef = doc(db, 'users', auth.uid);
     const userDoc = await getDoc(userDocRef);
 
     if (!userDoc.exists()) {
@@ -43,23 +35,14 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function PUT(request: NextRequest) {
+export const PUT = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { displayName, photoURL, preferences } = body;
 
-    const userDocRef = doc(db, 'users', user.uid);
+    const userDocRef = doc(db, 'users', auth.uid);
     
     const updateData: Record<string, unknown> = {
       updatedAt: serverTimestamp(),
@@ -85,4 +68,5 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
+

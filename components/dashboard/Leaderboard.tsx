@@ -6,19 +6,39 @@
 
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { LeaderboardEntry } from '@/types';
 import Image from 'next/image';
+import { Button } from '@/components/ui/Button';
 
 interface LeaderboardProps {
   entries: LeaderboardEntry[];
   currentUserId?: string;
+  timeframe?: 'weekly' | 'monthly' | 'all-time';
+  timeframeOptions?: Array<{ label: string; value: 'weekly' | 'monthly' | 'all-time' }>;
+  onTimeframeChange?: (value: 'weekly' | 'monthly' | 'all-time') => void;
+  loading?: boolean;
+  errorMessage?: string;
+  onRefresh?: () => void | Promise<unknown>;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId }) => {
+export const Leaderboard: React.FC<LeaderboardProps> = ({
+  entries,
+  currentUserId,
+  timeframe = 'weekly',
+  timeframeOptions = [
+    { label: 'This Week', value: 'weekly' },
+    { label: 'This Month', value: 'monthly' },
+    { label: 'All Time', value: 'all-time' },
+  ],
+  onTimeframeChange,
+  loading = false,
+  errorMessage,
+  onRefresh,
+}) => {
   const getRankDisplay = (rank: number) => {
     switch (rank) {
       case 1: return '🥇';
@@ -28,14 +48,76 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
     }
   };
 
+  const handleTimeframeClick = (value: 'weekly' | 'monthly' | 'all-time') => {
+    if (value === timeframe) return;
+    onTimeframeChange?.(value);
+  };
+
+  const hasEntries = entries.length > 0;
+  const sortedEntries = useMemo(() => entries.slice().sort((a, b) => a.rank - b.rank), [entries]);
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>🏆 Leaderboard</CardTitle>
+      <CardHeader className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle>🏆 Leaderboard</CardTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            {timeframeOptions.map((option) => {
+              const isActive = option.value === timeframe;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleTimeframeClick(option.value)}
+                  className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                    isActive
+                      ? 'bg-[var(--primary)] text-[var(--primary-foreground)] border-[var(--primary)]'
+                      : 'bg-transparent text-[var(--muted-foreground)] hover:text-[var(--foreground)] border-[var(--muted)]'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+            {onRefresh && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRefresh?.()}
+                disabled={loading}
+              >
+                Refresh
+              </Button>
+            )}
+          </div>
+        </div>
+        {errorMessage && (
+          <p className="text-sm text-[var(--destructive)] flex items-center gap-2">
+            <span>⚠️</span>
+            <span>{errorMessage}</span>
+          </p>
+        )}
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {entries.map((entry, index) => {
+        {loading && !hasEntries && (
+          <div className="flex justify-center py-8">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              className="w-10 h-10 border-4 border-[var(--primary)] border-t-transparent rounded-full"
+            />
+          </div>
+        )}
+
+        {!loading && !hasEntries && (
+          <p className="text-center text-sm text-[var(--muted-foreground)]">
+            No leaderboard data yet. Keep learning to climb the charts!
+          </p>
+        )}
+
+        {hasEntries && (
+          <div className="space-y-4">
+            {sortedEntries.map((entry, index) => {
             const isCurrentUser = entry.userId === currentUserId;
             return (
               <motion.div
@@ -90,8 +172,9 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ entries, currentUserId
                 </div>
               </motion.div>
             );
-          })}
-        </div>
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

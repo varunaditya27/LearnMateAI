@@ -6,20 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'day'; // 'day' or 'week'
 
@@ -36,7 +28,7 @@ export async function GET(request: NextRequest) {
     const progressRef = collection(db, 'progress');
     const progressQuery = query(
       progressRef,
-      where('userId', '==', user.uid),
+      where('userId', '==', auth.uid),
       where('lastAccessedAt', '>=', Timestamp.fromDate(startDate))
     );
     const progressSnapshot = await getDocs(progressQuery);
@@ -56,7 +48,7 @@ export async function GET(request: NextRequest) {
     const screenTimeRef = collection(db, 'screenTimeLogs');
     const screenTimeQuery = query(
       screenTimeRef,
-      where('userId', '==', user.uid),
+      where('userId', '==', auth.uid),
       where('startTime', '>=', Timestamp.fromDate(startDate))
     );
     const screenTimeSnapshot = await getDocs(screenTimeQuery);
@@ -120,4 +112,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
