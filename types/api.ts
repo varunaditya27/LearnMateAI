@@ -338,9 +338,7 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
-  meta?: {
-    [key: string]: any;
-  };
+  meta?: Record<string, unknown>;
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {

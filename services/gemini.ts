@@ -50,7 +50,7 @@ export async function generateCareerRoadmap(params: {
   currentSkills?: string[];
   experienceLevel?: string;
   timeframe?: string;
-}): Promise<any> {
+}): Promise<unknown> {
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
   
   const prompt = `You are an expert career counselor. Generate a comprehensive career roadmap in JSON format.
@@ -68,7 +68,7 @@ Create a roadmap with phases, skills, milestones, and actionable steps. Respond 
   // Extract JSON from response
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+  return JSON.parse(jsonMatch[0]) as unknown;
   }
   throw new Error('Failed to parse roadmap response');
 }
@@ -81,7 +81,7 @@ export async function generateQuiz(params: {
   difficulty: string;
   questionCount: number;
   questionTypes: string[];
-}): Promise<any> {
+}): Promise<unknown> {
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
   
   const prompt = `You are an expert educator. Generate a quiz to test understanding of: ${params.topic}
@@ -113,7 +113,7 @@ Create practical questions with clear explanations. Respond ONLY with valid JSON
   
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+  return JSON.parse(jsonMatch[0]) as unknown;
   }
   throw new Error('Failed to parse quiz response');
 }
@@ -126,7 +126,7 @@ export async function generateResourceRecommendations(params: {
   difficulty: string;
   learningStyle: string;
   preferredFormats: string[];
-}): Promise<any> {
+}): Promise<unknown> {
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
   
   const prompt = `You are a learning resource curator. Recommend 5-7 high-quality resources for learning: ${params.topic}
@@ -160,7 +160,7 @@ Focus on free, accessible content. Respond ONLY with valid JSON:
   
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+  return JSON.parse(jsonMatch[0]) as unknown;
   }
   throw new Error('Failed to parse recommendations response');
 }
@@ -174,7 +174,7 @@ export async function generateLearningBranches(params: {
   currentStep: number;
   branchOption?: string;
   userPreference?: string;
-}): Promise<any> {
+}): Promise<unknown> {
   const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
   
   const prompt = `You are an adaptive learning path designer. Create alternate learning branches.
@@ -217,7 +217,7 @@ Generate 2-3 distinct branches with 3-5 steps each. Respond ONLY with valid JSON
   
   const jsonMatch = responseText.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+  return JSON.parse(jsonMatch[0]) as unknown;
   }
   throw new Error('Failed to parse branches response');
 }
@@ -250,7 +250,7 @@ Respond ONLY with valid JSON array:
   return [];
 }
 
-export default {
+const geminiService = {
   generateMotivationBoost,
   generateCareerRoadmap,
   generateQuiz,
@@ -258,3 +258,5 @@ export default {
   generateLearningBranches,
   generateMatchReasons,
 };
+
+export default geminiService;
