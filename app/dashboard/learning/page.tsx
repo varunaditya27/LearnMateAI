@@ -25,6 +25,34 @@ export default function LearningPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
+  // Initialize sequential progression - only first step is available
+  const initializeStepProgression = (path: LearningPath): LearningPath => {
+    const updatedSteps = path.steps.map((step, index) => {
+      if (index === 0) {
+        // First step is always available
+        return { 
+          ...step, 
+          status: (step.status === 'completed' ? 'completed' : 'available') as 'locked' | 'available' | 'in-progress' | 'completed'
+        };
+      } else if (index > 0) {
+        // Check if previous step is completed
+        const prevStep = path.steps[index - 1];
+        if (prevStep.status === 'completed') {
+          return { 
+            ...step, 
+            status: (step.status === 'completed' ? 'completed' : 'available') as 'locked' | 'available' | 'in-progress' | 'completed'
+          };
+        } else {
+          // Lock steps until previous is completed
+          return { ...step, status: 'locked' as const };
+        }
+      }
+      return step;
+    });
+
+    return { ...path, steps: updatedSteps };
+  };
+
   const handleTopicSelect = async (topicId: string) => {
     setIsLoading(true);
     setError(null);
@@ -34,7 +62,16 @@ export default function LearningPage() {
       const response = await learningApi.generatePath('web-dev', 'frontend', topicId);
       
       if (response.success && response.data) {
-        setActivePath(response.data);
+        // Initialize with sequential progression
+        const pathWithProgression = initializeStepProgression(response.data);
+        setActivePath(pathWithProgression);
+        
+        // Save to Firestore with initial progression state
+        if (pathWithProgression.id) {
+          await learningApi.updatePath(pathWithProgression.id, {
+            steps: pathWithProgression.steps,
+          });
+        }
       } else {
         throw new Error(response.error || 'Failed to generate learning path');
       }
@@ -167,13 +204,15 @@ export default function LearningPage() {
         timeSpentMinutes: 0,
       });
 
-      // Update the path with new step statuses
+      // Sequential progression: Update step statuses
       const updatedSteps = activePath.steps.map((s, index) => {
         if (s.id === stepId) {
+          // Mark current step as completed
           return { ...s, status: 'completed' as const };
         }
-        // Unlock next step
-        if (index > 0 && activePath.steps[index - 1].id === stepId && s.status === 'locked') {
+        // Unlock the NEXT step only
+        const currentStepIndex = activePath.steps.findIndex(step => step.id === stepId);
+        if (index === currentStepIndex + 1 && s.status === 'locked') {
           return { ...s, status: 'available' as const };
         }
         return s;
@@ -183,17 +222,26 @@ export default function LearningPage() {
       const newProgress = Math.round((completedSteps / updatedSteps.length) * 100);
 
       if (activePath.id) {
+        // Save to Firestore
         await learningApi.updatePath(activePath.id, {
           steps: updatedSteps,
           progress: newProgress,
           status: newProgress === 100 ? 'completed' : 'active',
         });
 
-        // Refresh path
+        // Refresh path from Firestore
         const pathResponse = await learningApi.getPath(activePath.id);
         if (pathResponse.success && pathResponse.data) {
           setActivePath(pathResponse.data);
         }
+      } else {
+        // Update local state if no ID
+        setActivePath({
+          ...activePath,
+          steps: updatedSteps,
+          progress: newProgress,
+          status: newProgress === 100 ? 'completed' : 'active',
+        });
       }
 
       // Update user stats
@@ -201,8 +249,24 @@ export default function LearningPage() {
         pointsToAdd: 50,
         conceptsToAdd: 1,
       });
+
+      // End session if exists
+      if (sessionId) {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          await fetch(
+            `/api/learning/session?sessionId=${sessionId}&completed=true&progress=100`,
+            {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          setSessionId(null);
+        }
+      }
     } catch (err) {
       console.error('Failed to complete step:', err);
+      setError('Failed to complete step. Please try again.');
     }
   };
 
@@ -269,69 +333,101 @@ export default function LearningPage() {
             </Card>
 
             {/* Learning Steps */}
-            {activePath.steps.map((step, index) => (
-              <div key={step.id} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-heading font-semibold flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-sm">
-                      {index + 1}
-                    </span>
-                    {step.title || `Step ${index + 1}`}
-                  </h2>
-                  {step.status === 'completed' && (
-                    <Badge variant="secondary">✓ Completed</Badge>
+            {activePath.steps.map((step, index) => {
+              const isLocked = step.status === 'locked';
+              const isCompleted = step.status === 'completed';
+              const isAvailable = step.status === 'available' || step.status === 'in-progress';
+
+              return (
+                <div 
+                  key={step.id} 
+                  className={`space-y-4 ${isLocked ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-heading font-semibold flex items-center gap-2">
+                      <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                        isCompleted 
+                          ? 'bg-green-600 text-white' 
+                          : isLocked 
+                          ? 'bg-gray-300 text-gray-600' 
+                          : 'bg-[var(--primary)] text-white'
+                      }`}>
+                        {isCompleted ? '✓' : isLocked ? '🔒' : index + 1}
+                      </span>
+                      {step.title || `Step ${index + 1}`}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      {isCompleted && (
+                        <Badge variant="secondary">✓ Completed</Badge>
+                      )}
+                      {step.status === 'in-progress' && (
+                        <Badge variant="primary">In Progress</Badge>
+                      )}
+                      {isLocked && (
+                        <Badge variant="default">🔒 Complete Previous Step to Unlock</Badge>
+                      )}
+                      {isAvailable && !isCompleted && (
+                        <Badge className="bg-blue-500 text-white">Ready to Start</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {isLocked && (
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border-2 border-dashed border-gray-300">
+                      <p className="text-center text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
+                        🔒 <span>Complete the previous step to unlock this content</span>
+                      </p>
+                    </div>
                   )}
-                  {step.status === 'in-progress' && (
-                    <Badge variant="primary">In Progress</Badge>
-                  )}
-                  {step.status === 'locked' && (
-                    <Badge variant="default">🔒 Locked</Badge>
+
+                  {!isLocked && (
+                    <>
+                      {step.description && (
+                        <p className="text-[var(--muted-foreground)]">{step.description}</p>
+                      )}
+
+                      {step.objectives && step.objectives.length > 0 && (
+                        <div className="bg-[var(--muted)]/30 rounded-lg p-4">
+                          <h3 className="font-semibold mb-2">Learning Objectives:</h3>
+                          <ul className="list-disc list-inside space-y-1">
+                            {step.objectives.map((obj, i) => (
+                              <li key={i} className="text-sm text-[var(--muted-foreground)]">{obj}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {step.resources.map((resource) => (
+                          <EnhancedResourceCard
+                            key={resource.id}
+                            resource={resource}
+                            onStart={() => handleResourceStart(resource.id, resource.type)}
+                            onComplete={() => handleResourceComplete(resource.id)}
+                            onProgress={handleResourceProgress}
+                            onToggleFavorite={() => handleFavoriteToggle(resource.id)}
+                            isFavorite={favorites.has(resource.id)}
+                            isCompleted={isCompleted}
+                            progress={0}
+                          />
+                        ))}
+                      </div>
+
+                      {isAvailable && !isCompleted && (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="secondary"
+                            onClick={() => handleStepComplete(step.id)}
+                          >
+                            Mark Step as Complete
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
-
-                {step.description && (
-                  <p className="text-[var(--muted-foreground)]">{step.description}</p>
-                )}
-
-                {step.objectives && step.objectives.length > 0 && (
-                  <div className="bg-[var(--muted)]/30 rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">Learning Objectives:</h3>
-                    <ul className="list-disc list-inside space-y-1">
-                      {step.objectives.map((obj, i) => (
-                        <li key={i} className="text-sm text-[var(--muted-foreground)]">{obj}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {step.resources.map((resource) => (
-                    <EnhancedResourceCard
-                      key={resource.id}
-                      resource={resource}
-                      onStart={() => handleResourceStart(resource.id, resource.type)}
-                      onComplete={() => handleResourceComplete(resource.id)}
-                      onProgress={handleResourceProgress}
-                      onToggleFavorite={() => handleFavoriteToggle(resource.id)}
-                      isFavorite={favorites.has(resource.id)}
-                      isCompleted={step.status === 'completed'}
-                      progress={0}
-                    />
-                  ))}
-                </div>
-
-                {step.status !== 'completed' && step.status !== 'locked' && (
-                  <div className="flex justify-end">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleStepComplete(step.id)}
-                    >
-                      Mark Step as Complete
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </>
         ) : (
           <SkillSelector domains={mockDomains} onSelect={handleTopicSelect} />

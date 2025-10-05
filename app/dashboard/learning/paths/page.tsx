@@ -34,6 +34,20 @@ export default function AllLearningPathsPage() {
         const response = await api.learning.getPaths();
 
         if (response.success && response.data) {
+          console.log('Fetched paths:', response.data);
+          console.log('Paths with IDs:', response.data.filter(p => p.id));
+          console.log('Paths without IDs:', response.data.filter(p => !p.id));
+          
+          // Log each path's ID explicitly
+          response.data.forEach((path, idx) => {
+            console.log(`Path ${idx}:`, {
+              id: path.id,
+              name: path.name,
+              hasId: !!path.id,
+              idType: typeof path.id
+            });
+          });
+          
           setPaths(response.data);
         } else {
           throw new Error(response.error || 'Failed to fetch learning paths');
@@ -168,15 +182,23 @@ export default function AllLearningPathsPage() {
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPaths.map((path, index) => (
+            {filteredPaths.map((path, index) => {
+              const pathHref = `/dashboard/learning/paths/${path.id || 'unknown'}`;
+              console.log(`Rendering path card ${index}:`, { 
+                id: path.id, 
+                href: pathHref,
+                pathKeys: Object.keys(path)
+              });
+              
+              return (
               <motion.div
-                key={path.id}
+                key={path.id || `path-${path.userId}-${index}`}
                 initial="hidden"
                 animate="visible"
                 variants={fadeIn}
                 transition={{ duration: 0.5, delay: index * 0.05 }}
               >
-                <Link href={`/dashboard/learning/paths/${path.id}`}>
+                <Link href={pathHref}>
                   <Card className="hover:shadow-lg transition-all cursor-pointer h-full">
                     <CardHeader>
                       <div className="flex items-start justify-between gap-2">
@@ -224,7 +246,8 @@ export default function AllLearningPathsPage() {
                   </Card>
                 </Link>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
