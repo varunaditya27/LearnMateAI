@@ -68,9 +68,12 @@ export const registerUser = async (
     await setDoc(doc(db, 'users', firebaseUser.uid), userData);
     console.log('[Auth] Firestore document created successfully');
 
+    // Fetch the created document to ensure we have the correct data structure
+    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+    
     const returnUser = {
       id: firebaseUser.uid,
-      ...userData,
+      ...userDoc.data(),
     } as User;
 
     console.log('[Auth] Registration complete, returning user:', returnUser.id);
@@ -122,6 +125,8 @@ export const loginUser = async (
       throw new Error('No account found with this email');
     } else if (error.code === 'auth/invalid-email') {
       throw new Error('Invalid email address');
+    } else if (error.code === 'auth/too-many-requests') {
+      throw new Error('Too many failed login attempts. Please try again later');
     }
     throw new Error(error.message || 'Failed to sign in');
   }

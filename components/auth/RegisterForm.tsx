@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { registerUser, loginWithGoogle } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 
 export default function RegisterForm() {
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -57,11 +59,11 @@ export default function RegisterForm() {
     setIsSubmitting(true);
     
     try {
-      await registerUser(email, password, username);
+      const user = await registerUser(email, password, username);
+      setUser(user);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to register');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -71,11 +73,11 @@ export default function RegisterForm() {
     setIsSubmitting(true);
     
     try {
-      await loginWithGoogle();
+      const user = await loginWithGoogle();
+      setUser(user);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign up with Google');
-    } finally {
       setIsSubmitting(false);
     }
   };

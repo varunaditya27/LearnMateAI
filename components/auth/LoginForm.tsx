@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { loginUser, loginWithGoogle } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginForm() {
   const router = useRouter();
+  const setUser = useAuthStore((state) => state.setUser);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -35,8 +37,7 @@ export default function LoginForm() {
     
     try {
       const user = await loginUser(email, password);
-      // Wait a bit for auth state to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setUser(user);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in');
@@ -49,11 +50,11 @@ export default function LoginForm() {
     setIsSubmitting(true);
     
     try {
-      await loginWithGoogle();
+      const user = await loginWithGoogle();
+      setUser(user);
       router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
-    } finally {
       setIsSubmitting(false);
     }
   };
