@@ -126,11 +126,32 @@ export default function ProgressPage() {
     watch: [isReady],
   });
 
-  const isInitialLoading = authLoading || ((progressLoading || pathsLoading) && !progressEntries && !learningPaths);
+  const {
+    data: joinedChallenges,
+    loading: challengesLoading,
+    error: challengesError,
+    refetch: refetchChallenges,
+  } = useAsyncData(
+    async () => {
+      const response = await api.community.getMyJoinedChallenges();
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    },
+    {
+      enabled: isReady,
+      immediate: isReady,
+      cacheKey: 'my-joined-challenges-progress',
+      watch: [isReady],
+    }
+  );
+
+  const isInitialLoading = authLoading || ((progressLoading || pathsLoading || challengesLoading) && !progressEntries && !learningPaths && !joinedChallenges);
 
   const handleRefresh = useCallback(async () => {
-    await Promise.all([refetchProgress(), refetchPaths()]);
-  }, [refetchProgress, refetchPaths]);
+    await Promise.all([refetchProgress(), refetchPaths(), refetchChallenges()]);
+  }, [refetchProgress, refetchPaths, refetchChallenges]);
 
   const enhancedEntries = useMemo(() => {
     if (!progressEntries || !learningPaths) return [] as (Progress & { pathName?: string })[];
@@ -319,6 +340,90 @@ export default function ProgressPage() {
                     <div className="text-xs text-[var(--muted-foreground)]">
                       Started {formatDate(path.startedAt)}
                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </motion.section>
+        )}
+
+        {joinedChallenges && joinedChallenges.length > 0 && (
+          <motion.section
+            initial="hidden"
+            animate="visible"
+            variants={fadeIn}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-semibold">🏆 Active Challenges</h2>
+              <Badge variant="accent">{joinedChallenges.length}</Badge>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {joinedChallenges.map((participation) => (
+                <Card key={participation.participationId} className="h-full border-l-4 border-l-green-500">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center justify-between gap-2">
+                      <span className="line-clamp-1">{participation.challenge.name}</span>
+                      <Badge variant="secondary" size="sm">{participation.challenge.difficulty}</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <p className="text-sm text-[var(--muted-foreground)] line-clamp-2">
+                      {participation.challenge.description}
+                    </p>
+                    
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-[var(--muted-foreground)]">Challenge Progress</span>
+                        <span className="font-semibold">{participation.progress}%</span>
+                      </div>
+                      <ProgressBar value={participation.progress} className="bg-green-500/20" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-[var(--muted-foreground)]">Completed Tasks</p>
+                        <p className="font-semibold">
+                          {participation.completedTasks.length} / {participation.challenge.tasks.length}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[var(--muted-foreground)]">Reward Points</p>
+                        <p className="font-semibold text-green-600">
+                          {participation.challenge.rewards?.points || 0} pts
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-[var(--border)]">
+                      <div className="flex items-center justify-between text-xs text-[var(--muted-foreground)]">
+                        <span>Joined {formatDate(participation.joinedAt)}</span>
+                        <Badge 
+                          variant={participation.status === 'completed' ? 'success' : participation.status === 'active' ? 'primary' : 'secondary'}
+                          size="sm"
+                        >
+                          {participation.status}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {participation.challenge.tasks.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-xs font-semibold text-[var(--foreground)] mb-2">Next Tasks:</p>
+                        <ul className="space-y-1">
+                          {participation.challenge.tasks
+                            .filter(task => !participation.completedTasks.includes(task.id))
+                            .slice(0, 2)
+                            .map((task) => (
+                              <li key={task.id} className="text-xs text-[var(--muted-foreground)] flex items-start gap-2">
+                                <span className="text-green-500">•</span>
+                                <span className="line-clamp-1">{task.title}</span>
+                              </li>
+                            ))}
+                        </ul>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}

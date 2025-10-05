@@ -501,6 +501,42 @@ export const communityApi = {
       body: JSON.stringify({ discussionId, content }),
     });
   },
+
+  async getMyJoinedChallenges() {
+    return apiCall<Array<{
+      participationId: string;
+      userId: string;
+      joinedAt: string;
+      progress: number;
+      status: 'active' | 'completed' | 'abandoned';
+      completedTasks: string[];
+      lastActivityAt: string;
+      challenge: {
+        id: string;
+        name: string;
+        description: string;
+        topic: string;
+        difficulty: 'beginner' | 'intermediate' | 'advanced';
+        durationDays: number;
+        currentParticipants: number;
+        maxParticipants: number;
+        rewards?: {
+          points: number;
+          badges?: string[];
+        };
+        tasks: Array<{
+          id: string;
+          title: string;
+          description: string;
+          order: number;
+        }>;
+        startDate?: string;
+        endDate?: string;
+        status: 'draft' | 'active' | 'completed' | 'cancelled';
+        createdAt: string;
+      };
+    }>>('/api/community/challenges/my-challenges');
+  },
 };
 
 // ============================================
