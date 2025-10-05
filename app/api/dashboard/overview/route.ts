@@ -77,10 +77,28 @@ export async function GET(request) {
       where('status', '==', 'active')
     );
     const pathsSnapshot = await getDocs(pathsQuery);
-    const activePaths = pathsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const activePaths = pathsSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        userId: data.userId,
+        name: data.name,
+        description: data.description,
+        domainId: data.domainId,
+        subdomainId: data.subdomainId,
+        topicId: data.topicId,
+        status: data.status,
+        progress: data.progress,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
+        startedAt: data.startedAt?.toDate?.()?.toISOString() || data.startedAt,
+        completedAt: data.completedAt?.toDate?.()?.toISOString() || data.completedAt,
+        steps: data.steps?.map((step: { completedAt?: { toDate?: () => Date } }) => ({
+          ...step,
+          completedAt: step.completedAt?.toDate?.()?.toISOString() || step.completedAt,
+        })) || [],
+      };
+    });
 
     // Get today's screen time
     const today = new Date().toISOString().split('T')[0];

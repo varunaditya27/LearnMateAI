@@ -227,12 +227,12 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {resolvedPaths.slice(0, 3).map((path, index) => (
                 <motion.div
-                  key={path.id}
+                  key={path.id || `path-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <Link href={`/dashboard/learning/paths/${path.id}`}>
+                  <Link href={`/dashboard/learning/paths/${path.id || 'unknown'}`}>
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
                       <CardHeader>
                         <CardTitle className="line-clamp-2">{path.name}</CardTitle>

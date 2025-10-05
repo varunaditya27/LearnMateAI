@@ -41,7 +41,31 @@ export default function LearningPathViewPage() {
         const response = await api.learning.getPath(pathId);
 
         if (response.success && response.data) {
-          setPath(response.data);
+          // Apply sequential progression logic
+          const pathData = response.data;
+          const updatedSteps = pathData.steps.map((step, index) => {
+            if (index === 0) {
+              // First step is always available if not completed
+              return { 
+                ...step, 
+                status: (step.status === 'completed' ? 'completed' : 'available') as 'locked' | 'available' | 'in-progress' | 'completed'
+              };
+            } else {
+              // Check if previous step is completed
+              const prevStep = pathData.steps[index - 1];
+              if (prevStep.status === 'completed') {
+                return { 
+                  ...step, 
+                  status: (step.status === 'completed' ? 'completed' : 'available') as 'locked' | 'available' | 'in-progress' | 'completed'
+                };
+              } else {
+                // Lock steps until previous is completed
+                return { ...step, status: 'locked' as const };
+              }
+            }
+          });
+
+          setPath({ ...pathData, steps: updatedSteps });
         } else {
           throw new Error(response.error || 'Failed to fetch learning path');
         }
@@ -59,7 +83,7 @@ export default function LearningPathViewPage() {
   }, [pathId]);
 
   const handleStepComplete = async (step: LearningStep) => {
-    if (!path) return;
+    if (!path || step.status === 'locked') return;
 
     try {
       setUpdatingStep(step.id);
@@ -71,6 +95,31 @@ export default function LearningPathViewPage() {
       });
 
       if (response.success) {
+        // Update steps with sequential progression
+        const updatedSteps = path.steps.map((s, index) => {
+          if (s.id === step.id) {
+            // Mark current step as completed
+            return { ...s, status: 'completed' as const };
+          }
+          // Unlock the NEXT step only
+          const currentStepIndex = path.steps.findIndex(st => st.id === step.id);
+          if (index === currentStepIndex + 1 && s.status === 'locked') {
+            return { ...s, status: 'available' as const };
+          }
+          return s;
+        });
+
+        // Calculate new progress
+        const completedCount = updatedSteps.filter(s => s.status === 'completed').length;
+        const newProgress = Math.round((completedCount / updatedSteps.length) * 100);
+
+        // Update in Firestore
+        await api.learning.updatePath(pathId, {
+          steps: updatedSteps,
+          progress: newProgress,
+          status: newProgress === 100 ? 'completed' : 'active',
+        });
+
         // Refresh the path data
         const refreshResponse = await api.learning.getPath(pathId);
         if (refreshResponse.success && refreshResponse.data) {
@@ -249,100 +298,123 @@ export default function LearningPathViewPage() {
         >
           <h2 className="text-3xl font-bold mb-6">Learning Steps</h2>
           <div className="space-y-4">
-            {path.steps?.map((step) => (
-              <Card key={step.id} className={step.status === 'completed' ? 'opacity-75' : ''}>
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-6">
-                    {/* Step Number */}
-                    <div className="flex-shrink-0">
-                      <div
-                        className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold ${
-                          step.status === 'completed'
-                            ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                            : step.status === 'in-progress'
-                            ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-                            : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
-                        }`}
-                      >
-                        {getStepIcon(step.status)}
-                      </div>
-                    </div>
+            {path.steps?.map((step, index) => {
+              const isLocked = step.status === 'locked';
+              const isCompleted = step.status === 'completed';
+              const isAvailable = step.status === 'available' || step.status === 'in-progress';
 
-                    {/* Step Content */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-4 mb-3">
-                        <div>
-                          <h3 className="text-xl font-bold mb-2">
-                            Step {step.order}: {step.conceptId}
-                          </h3>
-                          <Badge variant={getStatusBadgeVariant(step.status)} size="sm">
-                            {step.status}
-                          </Badge>
+              return (
+                <Card 
+                  key={step.id} 
+                  className={`${isCompleted ? 'opacity-75' : ''} ${isLocked ? 'opacity-50' : ''}`}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-6">
+                      {/* Step Number */}
+                      <div className="flex-shrink-0">
+                        <div
+                          className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold ${
+                            isCompleted
+                              ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
+                              : isLocked
+                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                              : step.status === 'in-progress'
+                              ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                              : 'bg-[var(--muted)] text-[var(--muted-foreground)]'
+                          }`}
+                        >
+                          {isCompleted ? getStepIcon('completed') : isLocked ? '🔒' : getStepIcon(step.status)}
                         </div>
                       </div>
 
-                      {/* Resources */}
-                      {step.resources && step.resources.length > 0 && (
-                        <div className="space-y-3 mb-4">
-                          <h4 className="font-semibold text-sm text-[var(--muted-foreground)]">
-                            Resources:
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {step.resources.map((resource, idx) => (
-                              <a
-                                key={idx}
-                                href={resource.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-3 p-3 bg-[var(--muted)] rounded-lg hover:bg-[var(--muted)]/70 transition-colors"
-                              >
-                                <span className="text-2xl">
-                                  {resource.type === 'video'
-                                    ? '🎥'
-                                    : resource.type === 'article'
-                                    ? '📄'
-                                    : resource.type === 'interactive'
-                                    ? '🎮'
-                                    : '📝'}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold truncate">{resource.title}</div>
-                                  <div className="text-xs text-[var(--muted-foreground)]">
-                                    {resource.type} • {resource.duration} min
-                                  </div>
-                                </div>
-                                <span className="text-[var(--primary)]">→</span>
-                              </a>
-                            ))}
+                      {/* Step Content */}
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div>
+                            <h3 className="text-xl font-bold mb-2">
+                              Step {step.order}: {step.conceptId}
+                            </h3>
+                            <Badge variant={getStatusBadgeVariant(step.status)} size="sm">
+                              {isLocked ? '🔒 Locked - Complete Previous Step' : step.status}
+                            </Badge>
                           </div>
                         </div>
-                      )}
 
-                      {/* Action Button */}
-                      {step.status !== 'completed' && step.status !== 'locked' && (
-                        <Button
-                          variant="primary"
-                          onClick={() => handleStepComplete(step)}
-                          disabled={updatingStep === step.id}
-                        >
-                          {updatingStep === step.id
-                            ? 'Marking Complete...'
-                            : step.status === 'in-progress'
-                            ? 'Mark as Complete'
-                            : 'Start Learning'}
-                        </Button>
-                      )}
+                        {isLocked && (
+                          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 border-2 border-dashed border-gray-300 my-4">
+                            <p className="text-center text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
+                              🔒 <span>Complete Step {index} to unlock this content</span>
+                            </p>
+                          </div>
+                        )}
 
-                      {step.status === 'completed' && step.completedAt && (
-                        <div className="text-sm text-[var(--muted-foreground)]">
-                          ✓ Completed {new Date(step.completedAt.seconds * 1000).toLocaleDateString()}
-                        </div>
-                      )}
+                        {/* Resources */}
+                        {!isLocked && step.resources && step.resources.length > 0 && (
+                          <div className="space-y-3 mb-4">
+                            <h4 className="font-semibold text-sm text-[var(--muted-foreground)]">
+                              Resources:
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {step.resources.map((resource, idx) => (
+                                <a
+                                  key={idx}
+                                  href={resource.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-3 p-3 bg-[var(--muted)] rounded-lg hover:bg-[var(--muted)]/70 transition-colors"
+                                >
+                                  <span className="text-2xl">
+                                    {resource.type === 'video'
+                                      ? '🎥'
+                                      : resource.type === 'article'
+                                      ? '📄'
+                                      : resource.type === 'interactive'
+                                      ? '🎮'
+                                      : '📝'}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold truncate">{resource.title}</div>
+                                    <div className="text-xs text-[var(--muted-foreground)]">
+                                      {resource.type} • {resource.duration} min
+                                    </div>
+                                  </div>
+                                  <span className="text-[var(--primary)]">→</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Action Button */}
+                        {!isLocked && !isCompleted && (
+                          <Button
+                            variant="primary"
+                            onClick={() => handleStepComplete(step)}
+                            disabled={updatingStep === step.id}
+                          >
+                            {updatingStep === step.id
+                              ? 'Marking Complete...'
+                              : step.status === 'in-progress'
+                              ? 'Mark as Complete'
+                              : 'Start Learning'}
+                          </Button>
+                        )}
+
+                        {isCompleted && step.completedAt && (
+                          <div className="text-sm text-[var(--muted-foreground)]">
+                            ✓ Completed {new Date(
+                              typeof step.completedAt === 'string' 
+                                ? step.completedAt 
+                                : step.completedAt.seconds * 1000
+                            ).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </motion.div>
 

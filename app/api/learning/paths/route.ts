@@ -7,28 +7,50 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET() {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const pathsRef = collection(db, 'learningPaths');
-    const q = query(pathsRef, where('userId', '==', user.uid));
+    const q = query(pathsRef, where('userId', '==', auth.uid));
     const querySnapshot = await getDocs(q);
 
-    const paths = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const paths = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      const pathId = doc.id;
+      
+      console.log('[API] Processing path with ID:', pathId); // Debug log
+      
+      // Convert Firestore Timestamps to serializable format
+      const serializedPath = {
+        id: pathId, // Explicitly assign the ID first
+        userId: data.userId,
+        name: data.name,
+        description: data.description,
+        domainId: data.domainId,
+        subdomainId: data.subdomainId,
+        topicId: data.topicId,
+        status: data.status,
+        progress: data.progress,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
+        startedAt: data.startedAt?.toDate?.()?.toISOString() || data.startedAt,
+        completedAt: data.completedAt?.toDate?.()?.toISOString() || data.completedAt,
+        steps: data.steps?.map((step: { completedAt?: { toDate?: () => Date } }) => ({
+          ...step,
+          completedAt: step.completedAt?.toDate?.()?.toISOString() || step.completedAt,
+        })) || [],
+      };
+      
+      console.log('[API] Serialized path:', { id: serializedPath.id, name: serializedPath.name }); // Debug log
+      
+      return serializedPath;
+    });
+
+    console.log('[API] Returning paths count:', paths.length); // Debug log
+    console.log('[API] All path IDs:', paths.map(p => p.id)); // Debug log
 
     return NextResponse.json({
       success: true,
@@ -42,19 +64,10 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { name, description, domainId, subdomainId, topicId, steps } = body;
 
@@ -67,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     const pathsRef = collection(db, 'learningPaths');
     const docRef = await addDoc(pathsRef, {
-      userId: user.uid,
+      userId: auth.uid,
       name,
       description: description || '',
       domainId,
@@ -85,7 +98,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         id: docRef.id,
-        userId: user.uid,
+        userId: auth.uid,
         name,
         description,
         domainId,
@@ -104,4 +117,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

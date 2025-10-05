@@ -6,20 +6,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
-    const user = auth.currentUser;
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'week'; // 'day', 'week', 'month'
 
@@ -42,7 +34,7 @@ export async function GET(request: NextRequest) {
     const logsRef = collection(db, 'screenTimeLogs');
     const q = query(
       logsRef,
-      where('userId', '==', user.uid),
+      where('userId', '==', auth.uid),
       where('startTime', '>=', Timestamp.fromDate(startDate)),
       where('startTime', '<=', Timestamp.fromDate(endDate))
     );
@@ -103,4 +95,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -103,6 +103,12 @@ export interface LearningPath {
   startedAt: Timestamp;
   completedAt?: Timestamp;
   estimatedCompletionDate?: Timestamp;
+  estimatedTotalHours?: number;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  prerequisites?: string[];
+  outcomes?: string[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
   // TODO: Add adaptive learning features - difficulty adjustment based on performance
 }
 
@@ -110,6 +116,9 @@ export interface LearningStep {
   id: string;
   conceptId: string;
   order: number;
+  title?: string;
+  description?: string;
+  objectives?: string[];
   resources: Resource[];
   status: 'locked' | 'available' | 'in-progress' | 'completed';
   completedAt?: Timestamp;
