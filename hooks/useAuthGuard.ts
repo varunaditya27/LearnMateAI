@@ -22,15 +22,14 @@ export const useAuthGuard = (
   const initialize = useAuthStore((state) => state.initialize);
 
   const initRef = useRef(false);
+  const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
     if (initRef.current) return;
     initRef.current = true;
     
-    // Initialize and store the cleanup function
     const unsubscribe = initialize();
     
-    // Return cleanup to unsubscribe when component unmounts
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -41,8 +40,12 @@ export const useAuthGuard = (
   useEffect(() => {
     if (!enabled) return;
     if (isLoading) return;
+    if (hasRedirectedRef.current) return;
 
-    if (!isAuthenticated) {
+    // Only redirect if we're certain the user is not authenticated
+    // and auth has finished loading
+    if (!isAuthenticated && !isLoading) {
+      hasRedirectedRef.current = true;
       const redirectParam = pathname ? `?redirect=${encodeURIComponent(pathname)}` : '';
       router.replace(`${redirectTo}${redirectParam}`);
     }

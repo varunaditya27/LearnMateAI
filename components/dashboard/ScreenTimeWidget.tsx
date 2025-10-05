@@ -20,12 +20,12 @@ interface AppShortcut {
 }
 
 const appShortcuts: AppShortcut[] = [
-  { name: 'Instagram', icon: '📷', url: 'https://instagram.com', category: 'social' },
-  { name: 'YouTube', icon: '▶️', url: 'https://youtube.com', category: 'entertainment' },
-  { name: 'Twitter', icon: '🐦', url: 'https://twitter.com', category: 'social' },
-  { name: 'Reddit', icon: '🤖', url: 'https://reddit.com', category: 'social' },
-  { name: 'Netflix', icon: '🎬', url: 'https://netflix.com', category: 'entertainment' },
-  { name: 'LinkedIn', icon: '💼', url: 'https://linkedin.com', category: 'productive' },
+  { name: 'Instagram', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/instagram.svg', url: 'https://instagram.com', category: 'social' },
+  { name: 'YouTube', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/youtube.svg', url: 'https://youtube.com', category: 'entertainment' },
+  { name: 'Twitter', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/x.svg', url: 'https://twitter.com', category: 'social' },
+  { name: 'Reddit', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/reddit.svg', url: 'https://reddit.com', category: 'social' },
+  { name: 'Netflix', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/netflix.svg', url: 'https://netflix.com', category: 'entertainment' },
+  { name: 'LinkedIn', icon: 'https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/linkedin.svg', url: 'https://linkedin.com', category: 'productive' },
 ];
 
 interface TrackedSession {
@@ -100,52 +100,80 @@ export const ScreenTimeWidget: React.FC = () => {
       </CardHeader>
       <CardContent>
         {activeSession && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-4 bg-[var(--accent)]/10 border border-[var(--accent)] rounded-xl"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-[var(--foreground)]">Tracking: {activeSession.appName}</p>
-                <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                  {formatTime(elapsedTime)}
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const sessionDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
-                  setTodayTotal((prev) => prev + sessionDuration);
-                  setActiveSession(null);
-                  setElapsedTime(0);
-                }}
-              >
-                Stop
-              </Button>
-            </div>
-          </motion.div>
-        )}
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="mb-6 bg-[var(--accent)]/10 border border-[var(--accent)] rounded-xl"
+  >
+    <div className="flex items-center justify-between gap-6">
+      <div className="flex items-center gap-4">
+        <div className="relative w-20 h-20 flex-shrink-0">
+          <svg className="w-20 h-20 transform -rotate-90">
+            <circle
+              cx="30"
+              cy="30"
+              r="25"
+              stroke="var(--muted)"
+              strokeWidth="6"
+              fill="none"
+            />
+            <circle
+              cx="30"
+              cy="30"
+              r="25"
+              stroke={elapsedTime > 2700 ? '#ef4444' : elapsedTime > 1800 ? '#f59e0b' : '#10b981'}
+              strokeWidth="6"
+              fill="none"
+              strokeDasharray={`${2 * Math.PI * 36}`}
+              strokeDashoffset={`${2 * Math.PI * 36 * (1 - Math.min(elapsedTime / 2700, 1))}`}
+              className="transition-all duration-1000"
+              strokeLinecap="round"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-lg font-bold">{formatTime(elapsedTime)}</span>
+          </div>
+        </div>
+        <div>
+          <p className="font-semibold text-[var(--foreground)]">{activeSession.appName}</p>
+          <p className="text-xs text-[var(--muted-foreground)] mt-1">
+            {elapsedTime < 2700 ? `${Math.floor((2700 - elapsedTime) / 60)} min left` : 'Over 45 min!'}
+          </p>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          const sessionDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
+          setTodayTotal((prev) => prev + sessionDuration);
+          setActiveSession(null);
+          setElapsedTime(0);
+        }}
+      >
+        Stop
+      </Button>
+    </div>
+  </motion.div>
+)}
 
         <div className="grid grid-cols-3 gap-4">
           {appShortcuts.map((app, index) => (
             <motion.button
-              key={app.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.05 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleAppClick(app)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
-            >
-              <span className="text-3xl">{app.icon}</span>
-              <span className="text-xs font-medium text-center text-[var(--foreground)]">{app.name}</span>
-              <Badge variant={getCategoryColor(app.category)} size="sm">
-                {app.category}
-              </Badge>
-            </motion.button>
+  key={app.name}
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  transition={{ delay: index * 0.05 }}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={() => handleAppClick(app)}
+  className="flex flex-col items-center gap-3 p-5 rounded-xl bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
+>
+  <img src={app.icon} alt={app.name} className="w-10 h-10 mt-3" style={{ filter: 'grayscale(0%)' }} />
+  <span className="text-md font-semibold text-center text-[var(--foreground)]">{app.name}</span>
+<span className="!px-3 !py-1 sm:!px-4 sm:!py-1.5 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">    {app.category}
+  </span>
+</motion.button>
           ))}
         </div>
 
