@@ -6,11 +6,24 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { verifyAuth } from '@/lib/auth-middleware';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '');
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate user
+    const authResult = await verifyAuth(request);
+    if (!authResult) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = authResult.uid;
+
     const body = await request.json();
     const { topic, difficulty, questionCount, questionTypes } = body;
 
@@ -22,10 +35,10 @@ export async function POST(request: NextRequest) {
     }
 
     const numQuestions = questionCount || 5;
-    const level = difficulty || 'medium';
+    const level = difficulty || 'beginner';
     const types = questionTypes || ['multiple-choice', 'true-false'];
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
     
     const systemPrompt = `You are an expert educator creating high-quality quiz questions. Generate a quiz to test understanding of: ${topic}
 
@@ -38,7 +51,6 @@ Requirements:
 
 Respond in this exact JSON format:
 {
-  "quizId": "quiz_${Date.now()}",
   "topic": "${topic}",
   "difficulty": "${level}",
   "questions": [
@@ -82,7 +94,6 @@ Make questions engaging and educational. Vary difficulty within the level.`;
       console.error('Error parsing AI response:', e);
       // Fallback quiz structure
       quiz = {
-        quizId: `quiz_${Date.now()}`,
         topic,
         difficulty: level,
         questions: [
@@ -102,27 +113,43 @@ Make questions engaging and educational. Vary difficulty within the level.`;
       };
     }
 
+    // Save to Firestore
+    const quizzesRef = collection(db, 'quizzes');
     const quizData = {
-      ...quiz,
-      userId: 'current_user_id', // TODO: Get from auth
-      createdAt: new Date().toISOString(),
+      userId,
+      topic: quiz.topic,
+      difficulty: quiz.difficulty,
+      questions: quiz.questions,
+      totalPoints: quiz.totalPoints,
+      passingScore: quiz.passingScore,
+      estimatedMinutes: quiz.estimatedMinutes,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
       status: 'active',
       attempts: 0,
-      bestScore: null
+      bestScore: null,
     };
 
-    // TODO: Save to database
+    const docRef = await addDoc(quizzesRef, quizData);
+
+    const savedQuiz = {
+      quizId: docRef.id,
+      ...quizData,
+      createdAt: quizData.createdAt.toDate().toISOString(),
+      updatedAt: quizData.updatedAt.toDate().toISOString(),
+    };
 
     return NextResponse.json({
       success: true,
-      data: quizData,
+      data: savedQuiz,
       message: 'Quiz generated successfully'
     });
 
   } catch (error) {
     console.error('Generate quiz error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to generate quiz';
     return NextResponse.json(
-      { success: false, error: 'Failed to generate quiz' },
+      { success: false, error: message },
       { status: 500 }
     );
   }
@@ -131,38 +158,61 @@ Make questions engaging and educational. Vary difficulty within the level.`;
 // GET - Get user's quizzes
 export async function GET(request: NextRequest) {
   try {
+    // Authenticate user
+    const authResult = await verifyAuth(request);
+    if (!authResult) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    const userId = authResult.uid;
+
     const { searchParams } = new URL(request.url);
     const topic = searchParams.get('topic');
 
-    // TODO: Fetch from database
-    const mockQuizzes = [
-      {
-        quizId: 'quiz_1',
-        topic: 'React Hooks',
-        difficulty: 'medium',
-        totalPoints: 50,
-        attempts: 2,
-        bestScore: 85,
-        createdAt: '2025-10-03T10:00:00Z'
-      }
-    ];
+    // Query Firestore
+    const quizzesRef = collection(db, 'quizzes');
+    let q = query(
+      quizzesRef,
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
 
-    const filtered = topic 
-      ? mockQuizzes.filter(q => q.topic.toLowerCase().includes(topic.toLowerCase()))
-      : mockQuizzes;
+    // Add topic filter if provided
+    if (topic) {
+      q = query(
+        quizzesRef,
+        where('userId', '==', userId),
+        where('topic', '==', topic),
+        orderBy('createdAt', 'desc')
+      );
+    }
+
+    const querySnapshot = await getDocs(q);
+    const quizzes = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        quizId: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      };
+    });
 
     return NextResponse.json({
       success: true,
-      data: filtered,
+      data: quizzes,
       meta: {
-        total: filtered.length
+        total: quizzes.length
       }
     });
 
   } catch (error) {
     console.error('Get quizzes error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch quizzes';
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch quizzes' },
+      { success: false, error: message },
       { status: 500 }
     );
   }

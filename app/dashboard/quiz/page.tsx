@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -46,7 +46,21 @@ const fetchQuizzes = async (topicFilter?: string) => {
 
 export default function QuizDashboardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
-  const isReady = isAuthenticated && !authLoading;
+  const [authReady, setAuthReady] = useState(false);
+
+  // Wait for auth to be fully ready before making API calls
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      const timer = setTimeout(() => {
+        setAuthReady(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setAuthReady(false);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  const isReady = isAuthenticated && !authLoading && authReady;
 
   const [topicFilter, setTopicFilter] = useState('');
   const [generateForm, setGenerateForm] = useState({
@@ -62,6 +76,7 @@ export default function QuizDashboardPage() {
     loading: quizzesLoading,
     error: quizzesError,
     refetch: refetchQuizzes,
+    invalidate: invalidateQuizzes,
   } = useAsyncData(() => fetchQuizzes(topicFilter || undefined), {
     enabled: isReady,
     immediate: isReady,
@@ -92,7 +107,7 @@ export default function QuizDashboardPage() {
   }, [selectedQuizId, quizzesList]);
 
   React.useEffect(() => {
-    if (selectedQuiz) {
+    if (selectedQuiz && selectedQuiz.questions && Array.isArray(selectedQuiz.questions)) {
       const initialAnswers: Record<string, string | boolean> = {};
       selectedQuiz.questions.forEach((question) => {
         switch (question.type) {
@@ -136,10 +151,16 @@ export default function QuizDashboardPage() {
       });
 
       if (response.success && response.data) {
+        const newQuizId = response.data.quizId;
         setFeedback({ type: 'success', message: 'Quiz generated successfully! Ready when you are.' });
         setGenerateForm({ topic: '', difficulty: 'beginner', questionCount: 8 });
-        await refetchQuizzes();
-        setSelectedQuizId(response.data.quizId);
+        
+        // Invalidate cache and refetch to show new quiz
+        invalidateQuizzes();
+        setTimeout(async () => {
+          await refetchQuizzes();
+          setSelectedQuizId(newQuizId);
+        }, 500);
       } else {
         throw new Error(extractErrorMessage(response.error, 'Unable to generate quiz')); 
       }
