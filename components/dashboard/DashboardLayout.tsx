@@ -22,10 +22,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Home', href: '/dashboard' },
-  { label: 'Leaderboard', href: '/dashboard/leaderboard' },
-  { label: 'Screen Time', href: '/dashboard/screen-time' },
   { label: 'Progress', href: '/dashboard/progress' },
-  { label: 'Settings', href: '/dashboard/settings' },
+  { label: 'Screen Time', href: '/dashboard/screen-time' },
+  { label: 'Community', href: '/dashboard/community' },
+  { label: 'Motivation', href: '/dashboard/motivation' },
+  { label: 'Roadmap', href: '/dashboard/roadmap' },
+  { label: 'Quiz Center', href: '/dashboard/quiz' },
+  { label: 'Resources', href: '/dashboard/resources' },
+  { label: 'Leaderboard', href: '/dashboard/leaderboard' },
 ];
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
