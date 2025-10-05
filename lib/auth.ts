@@ -20,7 +20,7 @@ import {
   onAuthStateChanged,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, FieldValue } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { User } from '@/types';
 
@@ -53,6 +53,7 @@ export const registerWithEmail = async (
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         dailyGoalMinutes: 60,
         reminderEnabled: true,
+        learningStyle: 'visual',
         notificationSettings: {
           email: true,
           push: true,
@@ -141,9 +142,10 @@ export const signInWithGoogle = async (): Promise<User> => {
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           dailyGoalMinutes: 60,
           reminderEnabled: true,
+          learningStyle: 'visual',
           notificationSettings: {
             email: true,
-            push: true,
+            push: false,
             dailySummary: true,
             weeklyReport: true,
             streakReminders: true,
@@ -182,38 +184,6 @@ export const signOut = async (): Promise<void> => {
     const message = error instanceof Error ? error.message : 'Failed to sign out';
     throw new Error(message);
   }
-};
-
-/**
- * Get the current authenticated user
- */
-export const getCurrentUser = (): Promise<User | null> => {
-  return new Promise((resolve, reject) => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      async (firebaseUser) => {
-        unsubscribe();
-        if (firebaseUser) {
-          try {
-            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-            if (userDoc.exists()) {
-              resolve({
-                id: firebaseUser.uid,
-                ...userDoc.data(),
-              } as User);
-            } else {
-              resolve(null);
-            }
-          } catch (error) {
-            reject(error);
-          }
-        } else {
-          resolve(null);
-        }
-      },
-      reject
-    );
-  });
 };
 
 /**
