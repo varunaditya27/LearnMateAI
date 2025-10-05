@@ -112,9 +112,6 @@ export default function DashboardPage() {
 
   const {
     data: joinedChallenges,
-    loading: challengesLoading,
-    error: challengesError,
-    refetch: refetchChallenges,
   } = useAsyncData(
     async () => {
       const response = await api.community.getMyJoinedChallenges();

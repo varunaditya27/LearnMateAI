@@ -31,7 +31,7 @@ export const registerUser = async (
     await updateProfile(firebaseUser, { displayName: name });
     console.log('[Auth] Display name updated');
 
-    const userData: any = {
+    const userData: Record<string, unknown> = {
       email: firebaseUser.email!,
       displayName: name,
       createdAt: serverTimestamp(),
@@ -78,16 +78,20 @@ export const registerUser = async (
 
     console.log('[Auth] Registration complete, returning user:', returnUser.id);
     return returnUser;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Auth] Registration error:', error);
-    if (error.code === 'auth/email-already-in-use') {
-      throw new Error('Email already in use');
-    } else if (error.code === 'auth/weak-password') {
-      throw new Error('Password should be at least 6 characters');
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error('Invalid email address');
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as { code: string; message?: string };
+      if (firebaseError.code === 'auth/email-already-in-use') {
+        throw new Error('Email already in use');
+      } else if (firebaseError.code === 'auth/weak-password') {
+        throw new Error('Password should be at least 6 characters');
+      } else if (firebaseError.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address');
+      }
+      throw new Error(firebaseError.message || 'Failed to register');
     }
-    throw new Error(error.message || 'Failed to register');
+    throw new Error(error instanceof Error ? error.message : 'Failed to register');
   }
 };
 
@@ -117,18 +121,22 @@ export const loginUser = async (
 
     console.log('[Auth] Login complete, returning user:', returnUser.id);
     return returnUser;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Auth] Login error:', error);
-    if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-      throw new Error('Invalid email or password');
-    } else if (error.code === 'auth/user-not-found') {
-      throw new Error('No account found with this email');
-    } else if (error.code === 'auth/invalid-email') {
-      throw new Error('Invalid email address');
-    } else if (error.code === 'auth/too-many-requests') {
-      throw new Error('Too many failed login attempts. Please try again later');
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as { code: string; message?: string };
+      if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password') {
+        throw new Error('Invalid email or password');
+      } else if (firebaseError.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email');
+      } else if (firebaseError.code === 'auth/invalid-email') {
+        throw new Error('Invalid email address');
+      } else if (firebaseError.code === 'auth/too-many-requests') {
+        throw new Error('Too many failed login attempts. Please try again later');
+      }
+      throw new Error(firebaseError.message || 'Failed to sign in');
     }
-    throw new Error(error.message || 'Failed to sign in');
+    throw new Error(error instanceof Error ? error.message : 'Failed to sign in');
   }
 };
 
@@ -150,7 +158,7 @@ export const loginWithGoogle = async (): Promise<User> => {
       } as User;
     } else {
       console.log('[Auth] New user, creating Firestore document...');
-      const userData: any = {
+      const userData: Record<string, unknown> = {
         email: firebaseUser.email!,
         displayName: firebaseUser.displayName || 'User',
         createdAt: serverTimestamp(),
@@ -191,14 +199,18 @@ export const loginWithGoogle = async (): Promise<User> => {
         ...userData,
       } as User;
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Auth] Google sign in error:', error);
-    if (error.code === 'auth/popup-closed-by-user') {
-      throw new Error('Sign in cancelled');
-    } else if (error.code === 'auth/popup-blocked') {
-      throw new Error('Popup blocked. Please allow popups for this site');
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as { code: string; message?: string };
+      if (firebaseError.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign in cancelled');
+      } else if (firebaseError.code === 'auth/popup-blocked') {
+        throw new Error('Popup blocked. Please allow popups for this site');
+      }
+      throw new Error(firebaseError.message || 'Failed to sign in with Google');
     }
-    throw new Error(error.message || 'Failed to sign in with Google');
+    throw new Error(error instanceof Error ? error.message : 'Failed to sign in with Google');
   }
 };
 
@@ -207,9 +219,9 @@ export const logoutUser = async (): Promise<void> => {
     console.log('[Auth] Logging out...');
     await firebaseSignOut(auth);
     console.log('[Auth] Logout successful');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Auth] Logout error:', error);
-    throw new Error(error.message || 'Failed to sign out');
+    throw new Error(error instanceof Error ? error.message : 'Failed to sign out');
   }
 };
 
