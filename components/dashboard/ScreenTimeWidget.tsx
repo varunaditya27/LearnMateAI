@@ -1,7 +1,7 @@
 /**
  * Screen Time Widget Component
  * 
- * Consistent greyish theme screen time tracker
+ * Consistent greyish theme screen time tracker with backend integration
  */
 
 'use client';
@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { api } from '@/services/api';
 
 interface AppShortcut {
   name: string;
@@ -38,6 +39,26 @@ export const ScreenTimeWidget: React.FC = () => {
   const [activeSession, setActiveSession] = useState<TrackedSession | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [todayTotal, setTodayTotal] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Load today's total from API on mount
+  useEffect(() => {
+    const loadTodayTotal = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        const response = await api.screenTime.getLogs(today);
+        
+        if (response.success && response.data) {
+          const total = response.data.reduce((sum, log) => sum + log.durationMinutes, 0);
+          setTodayTotal(total);
+        }
+      } catch (error) {
+        console.error('Failed to load today\'s screen time:', error);
+      }
+    };
+    
+    loadTodayTotal();
+  }, []);
 
   useEffect(() => {
     if (activeSession) {
@@ -50,21 +71,62 @@ export const ScreenTimeWidget: React.FC = () => {
     }
   }, [activeSession]);
 
+  const saveSession = async (sessionDuration: number, appName: string, category: AppShortcut['category']) => {
+    if (sessionDuration < 1) return; // Don't save sessions less than 1 minute
+    
+    setIsSaving(true);
+    try {
+      const durationMinutes = Math.round(sessionDuration / 60);
+      const today = new Date().toISOString().split('T')[0];
+      
+      await api.screenTime.logScreenTime({
+        appName,
+        appCategory: category,
+        durationMinutes,
+        date: today,
+      });
+      
+      setTodayTotal((prev) => prev + durationMinutes);
+    } catch (error) {
+      console.error('Failed to save screen time session:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleAppClick = (app: AppShortcut) => {
     if (activeSession) {
+      // Stop the current session and save it
       const sessionDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
-      setTodayTotal((prev) => prev + sessionDuration);
+      saveSession(sessionDuration, activeSession.appName, app.category);
       setActiveSession(null);
       setElapsedTime(0);
     }
 
+    // Open the app in a new tab
     window.open(app.url, '_blank');
 
+    // Start tracking the new session
     setActiveSession({
       appName: app.name,
       startTime: Date.now(),
       url: app.url,
     });
+  };
+
+  const handleStopSession = () => {
+    if (!activeSession) return;
+    
+    const sessionDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
+    
+    // Find the app category
+    const app = appShortcuts.find(a => a.name === activeSession.appName);
+    if (app) {
+      saveSession(sessionDuration, activeSession.appName, app.category);
+    }
+    
+    setActiveSession(null);
+    setElapsedTime(0);
   };
 
   const formatTime = (seconds: number): string => {
@@ -78,6 +140,17 @@ export const ScreenTimeWidget: React.FC = () => {
       return `${minutes}m ${secs}s`;
     } else {
       return `${secs}s`;
+    }
+  };
+  
+  const formatMinutes = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    } else {
+      return `${mins}m`;
     }
   };
 
@@ -95,7 +168,7 @@ export const ScreenTimeWidget: React.FC = () => {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Screen Time</CardTitle>
-          <Badge variant="accent">{formatTime(todayTotal)} today</Badge>
+          <Badge variant="accent">{formatMinutes(todayTotal)} today</Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -115,14 +188,10 @@ export const ScreenTimeWidget: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  const sessionDuration = Math.floor((Date.now() - activeSession.startTime) / 1000);
-                  setTodayTotal((prev) => prev + sessionDuration);
-                  setActiveSession(null);
-                  setElapsedTime(0);
-                }}
+                onClick={handleStopSession}
+                disabled={isSaving}
               >
-                Stop
+                {isSaving ? 'Saving...' : 'Stop'}
               </Button>
             </div>
           </motion.div>
