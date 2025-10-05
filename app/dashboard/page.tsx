@@ -6,7 +6,7 @@
 
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
@@ -65,8 +65,22 @@ const fetchLeaderboardData = async (timeframe: LeaderboardTimeframe) => {
 export default function DashboardPage() {
   const { user: authUser, isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('weekly');
+  const [authReady, setAuthReady] = useState(false);
 
-  const isReady = isAuthenticated && !authLoading;
+  // Wait for auth to be fully ready before making API calls
+  useEffect(() => {
+    if (isAuthenticated && !authLoading) {
+      // Longer delay to ensure Firebase token is ready and auth store is synced
+      const timer = setTimeout(() => {
+        setAuthReady(true);
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setAuthReady(false);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  const isReady = isAuthenticated && !authLoading && authReady;
 
   const {
     data: dashboardData,
@@ -99,7 +113,7 @@ export default function DashboardPage() {
     setTimeframe(value);
   }, []);
 
-  const isInitialLoading = authLoading || (overviewLoading && !dashboardData);
+  const isInitialLoading = authLoading || !authReady || (overviewLoading && !dashboardData);
 
   if (isInitialLoading) {
     return (
