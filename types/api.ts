@@ -12,13 +12,19 @@ export interface StudyBuddyMatch {
   userId: string;
   displayName: string;
   topic: string;
-  timezone: string;
-  pace: 'slow' | 'medium' | 'fast';
   skillLevel: 'beginner' | 'intermediate' | 'advanced';
-  interests: string[];
   photoURL?: string | null;
   matchScore: number;
   matchReason: string;
+  studyPreferences?: {
+    timezone?: string;
+    pace?: 'slow' | 'medium' | 'fast';
+    [key: string]: unknown;
+  };
+  // Legacy fields for backward compatibility
+  timezone?: string;
+  pace?: 'slow' | 'medium' | 'fast';
+  interests?: string[];
 }
 
 export interface StudyBuddyMatchRequest {

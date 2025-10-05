@@ -459,6 +459,48 @@ export const communityApi = {
       body: JSON.stringify(discussion),
     });
   },
+
+  async likeDiscussion(discussionId: string) {
+    return apiCall<{
+      liked: boolean;
+      discussionId: string;
+      userId: string;
+    }>('/api/community/discussions/like', {
+      method: 'POST',
+      body: JSON.stringify({ discussionId }),
+    });
+  },
+
+  async getReplies(discussionId: string) {
+    return apiCall<Array<{
+      id: string;
+      discussionId: string;
+      content: string;
+      author: {
+        userId: string;
+        displayName: string;
+        photoURL: string | null;
+      };
+      createdAt: string;
+    }>>(`/api/community/discussions/replies?discussionId=${discussionId}`);
+  },
+
+  async postReply(discussionId: string, content: string) {
+    return apiCall<{
+      id: string;
+      discussionId: string;
+      content: string;
+      author: {
+        userId: string;
+        displayName: string;
+        photoURL: string | null;
+      };
+      createdAt: string;
+    }>('/api/community/discussions/replies', {
+      method: 'POST',
+      body: JSON.stringify({ discussionId, content }),
+    });
+  },
 };
 
 // ============================================
