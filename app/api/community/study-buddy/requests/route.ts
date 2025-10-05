@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { withAuth } from '@/lib/api-helpers';
 
 // POST - Create a study buddy request (user is looking for a buddy)

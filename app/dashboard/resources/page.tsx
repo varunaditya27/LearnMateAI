@@ -87,7 +87,7 @@ export default function ResourceRecommendationsPage() {
   } = useAsyncData(() => fetchRecommendations(query), {
     enabled: isReady && !!query,
     immediate: !!query,
-    cacheKey: query ? `resource-${query.topic}-${query.difficulty}-${query.learningStyle ?? 'any'}` : false,
+    cacheKey: query ? `resource-${query.topic}-${query.difficulty}-${query.learningStyle ?? 'any'}` : undefined,
     watch: [isReady, query?.topic, query?.difficulty, query?.learningStyle],
   });
 

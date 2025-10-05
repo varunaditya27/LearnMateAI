@@ -126,7 +126,7 @@ export function StudyBuddySystem({ isReady }: StudyBuddySystemProps) {
       } else {
         setCreateError(response.error || 'Failed to create request');
       }
-    } catch (error) {
+    } catch {
       setCreateError('An error occurred');
     } finally {
       setCreatingRequest(false);
@@ -150,7 +150,7 @@ export function StudyBuddySystem({ isReady }: StudyBuddySystemProps) {
       } else {
         alert(response.error || 'Failed to send connection request');
       }
-    } catch (error) {
+    } catch {
       alert('An error occurred');
     } finally {
       setSendingConnection(prev => {
@@ -173,7 +173,7 @@ export function StudyBuddySystem({ isReady }: StudyBuddySystemProps) {
       } else {
         alert(response.error || `Failed to ${action} request`);
       }
-    } catch (error) {
+    } catch {
       alert('An error occurred');
     }
   };

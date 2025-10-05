@@ -301,7 +301,6 @@ export default function LearningPathViewPage() {
             {path.steps?.map((step, index) => {
               const isLocked = step.status === 'locked';
               const isCompleted = step.status === 'completed';
-              const isAvailable = step.status === 'available' || step.status === 'in-progress';
 
               return (
                 <Card 

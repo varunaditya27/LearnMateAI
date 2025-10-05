@@ -11,7 +11,7 @@ import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { api } from '@/services/api';
 import { StudyBuddySystem } from '@/components/community/StudyBuddySystem';
-import type { GroupChallenge, Discussion, StudyBuddyMatch } from '@/types/api';
+import type { GroupChallenge, Discussion } from '@/types/api';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 16 },
@@ -47,9 +47,6 @@ const fetchRecentDiscussions = async () => {
 };
 
 const matchTopics = ['react', 'python', 'javascript', 'ui-ux', 'data-science'];
-const paceOptions: Array<'slow' | 'medium' | 'fast'> = ['slow', 'medium', 'fast'];
-const skillLevels: Array<'beginner' | 'intermediate' | 'advanced'> = ['beginner', 'intermediate', 'advanced'];
-const timezones = ['UTC', 'America/New_York', 'Europe/London', 'Asia/Kolkata', 'Asia/Singapore'];
 
 export default function CommunityPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
@@ -80,16 +77,12 @@ export default function CommunityPage() {
     watch: [isReady],
   });
 
-  const [matchForm, setMatchForm] = useState({
-    topic: matchTopics[0],
-    timezone: timezones[0],
-    pace: paceOptions[1],
-    skillLevel: skillLevels[1],
-  });
-
-  const [matchResults, setMatchResults] = useState<StudyBuddyMatch[]>([]);
-  const [matchLoading, setMatchLoading] = useState(false);
-  const [matchError, setMatchError] = useState<string | null>(null);
+  // Study buddy matching state (removed - using StudyBuddySystem component)
+  // const [matchForm, setMatchForm] = useState({...});
+  // const [matchResults, setMatchResults] = useState<StudyBuddyMatch[]>([]);
+  // const [matchLoading, setMatchLoading] = useState(false);
+  // const [matchError, setMatchError] = useState<string | null>(null);
+  // const handleMatchSubmit = async (event: React.FormEvent<HTMLFormElement>) => {...}
 
   const [joiningChallengeId, setJoiningChallengeId] = useState<string | null>(null);
   const [joinFeedback, setJoinFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -134,26 +127,6 @@ export default function CommunityPage() {
   const handleRefresh = useCallback(async () => {
     await Promise.all([refetchChallenges(), refetchDiscussions()]);
   }, [refetchChallenges, refetchDiscussions]);
-
-  const handleMatchSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMatchLoading(true);
-    setMatchError(null);
-
-    try {
-      const response = await api.community.matchStudyBuddy(matchForm);
-      if (response.success && response.data) {
-        setMatchResults(response.data.matches);
-      } else {
-        throw new Error(extractErrorMessage(response.error, 'Unable to find study buddies'));
-      }
-    } catch (error) {
-      setMatchError(extractErrorMessage(error, 'Unable to find study buddies'));
-      setMatchResults([]);
-    } finally {
-      setMatchLoading(false);
-    }
-  };
 
   const handleJoinChallenge = async (challengeId: string) => {
     setJoiningChallengeId(challengeId);

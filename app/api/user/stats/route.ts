@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth, db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const user = auth.currentUser;
 

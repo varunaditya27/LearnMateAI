@@ -129,7 +129,6 @@ export default function ProgressPage() {
   const {
     data: joinedChallenges,
     loading: challengesLoading,
-    error: challengesError,
     refetch: refetchChallenges,
   } = useAsyncData(
     async () => {

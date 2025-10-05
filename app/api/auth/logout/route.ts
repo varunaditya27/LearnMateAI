@@ -5,7 +5,7 @@
  * Handles user logout and session cleanup.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 

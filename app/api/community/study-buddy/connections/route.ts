@@ -138,8 +138,8 @@ export const GET = withAuth(async (request: NextRequest, auth) => {
 
     const connectionsRef = collection(db, 'studyBuddyConnections');
     
-    let incomingConnections: any[] = [];
-    let outgoingConnections: any[] = [];
+    let incomingConnections: Array<Record<string, unknown>> = [];
+    let outgoingConnections: Array<Record<string, unknown>> = [];
 
     // Fetch incoming requests
     if (type === 'incoming' || type === 'all') {
@@ -183,8 +183,8 @@ export const GET = withAuth(async (request: NextRequest, auth) => {
 
     // Sort by createdAt descending
     allConnections.sort((a, b) => {
-      const dateA = new Date(a.createdAt).getTime();
-      const dateB = new Date(b.createdAt).getTime();
+      const dateA = new Date(a.createdAt as string | number | Date).getTime();
+      const dateB = new Date(b.createdAt as string | number | Date).getTime();
       return dateB - dateA;
     });
 
