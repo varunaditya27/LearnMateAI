@@ -1,107 +1,190 @@
 <div align="center">
 
-# 📚 LearnMate: AI That Makes Learning Addictive
+# 📚 LearnMate AI
+
+### *Making Self-Learning Structured, Engaging, and Addictive*
+
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore-orange?logo=firebase)](https://firebase.google.com/)
+[![Google AI](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google)](https://ai.google.dev/)
 
 </div>
 
-LearnMate is an **AI-powered personal learning companion** designed to make self-learning structured, engaging, and addictive. It leverages **autonomous AI agents**, **adaptive learning journeys**, and **community-driven growth** to help students and professionals acquire new skills, stay motivated, and build lasting learning habits.
+---
+
+## 🌟 Overview
+
+**LearnMate AI** is a production-ready, AI-powered learning companion that transforms self-directed education into an engaging, personalized experience. Built with cutting-edge technologies, it combines intelligent content curation, real-time progress tracking, gamification mechanics, and community-driven learning to help users master any skill.
+
+Unlike traditional learning platforms, LearnMate adapts to individual learning styles, tracks genuine engagement through behavioral analytics, and leverages advanced AI to generate personalized roadmaps, quizzes, and motivation strategies.
 
 ---
 
-## 🚀 Key Features
+## ✨ Core Features
 
-### 🔹 Personalized Learning Engine
+### 🎯 **AI-Powered Learning Paths**
+- **Intelligent Path Generation**: Google Gemini AI creates customized, step-by-step learning journeys tailored to user goals
+- **Multi-Format Content**: Curated resources including YouTube videos, articles, and interactive tutorials
+- **Adaptive Branching**: Dynamic path adjustments based on user performance, preferences, and learning style
+- **Sequential & Project-Based Modes**: Choose between structured theory-first or hands-on learning approaches
 
-* Users choose a **domain → subdomain → topic → concept** OR directly prompt for any topic.
-* AI generates a **stepwise personalized learning path** with embedded YouTube/learning resources.
-* Real-time adaptation: dynamically adjusts based on user progress, doubts, and engagement.
+### 📊 **Advanced Progress Tracking**
+- **Real-Time Session Monitoring**: Tracks watch time, focus duration, pause events, and tab switches
+- **Engagement Analytics**: Calculates engagement scores using visibility detection and interaction patterns
+- **Distraction Detection**: Monitors tab visibility to measure genuine focus vs. multitasking
+- **Streak System**: Daily consistency tracking with current and best streak records
+- **Completion Rewards**: Points awarded when users achieve 90%+ completion with strong engagement
 
-### 🔹 Interactive Content Delivery
+### 🎮 **Gamification Engine**
+- **Points & Leveling System**: Earn points for completing resources, maintaining streaks, and engaging deeply
+- **Global Leaderboard**: Real-time rankings with all-time, weekly, and monthly views
+- **Achievement System**: Unlock milestones and badges for consistent learning habits
+- **Habit Challenges**: Join daily/weekly/monthly challenges to build lasting learning routines
+- **Visual Progress Indicators**: Beautiful progress bars and completion statistics
 
-* Instead of just links, videos appear as **cards embedded within the platform** for seamless tracking.
-* Screen time, focus, and engagement are logged for progress analysis.
+### 🤝 **Community Learning Network**
+- **Study Buddy Matching**: AI-powered matching based on learning topics, skill level, pace, and timezone
+- **Connection Requests**: Send, accept, or reject study buddy invitations with real-time status updates
+- **Group Challenges**: Collaborative learning missions with shared goals and progress tracking
+- **Discussion Forums**: Topic-based threads for sharing insights, asking questions, and peer support
+- **Social Learning**: Track community activity, reply to discussions, and learn together
 
-### 🔹 Smart Learning Companion
+### 🚀 **Career Planning Tools**
+- **AI Career Roadmaps**: Generate comprehensive multi-phase career development plans
+- **Skill Mapping**: Identify required skills, projects, and milestones for any career path
+- **Timeline Visualization**: Phase-by-phase roadmap with estimated durations and checkpoints
+- **Persistent Storage**: Save and revisit generated roadmaps with Firestore integration
 
-* **Doubt Clarification System** (powered by LLMs via Groq Cloud).
-* **Smart Reminders** & periodic nudges to stay consistent.
-* Daily/weekly progress tracking with suggestions for improvement.
+### 📝 **Intelligent Quiz System**
+- **Dynamic Quiz Generation**: AI creates contextual quizzes for any topic with adjustable difficulty
+- **Instant Grading**: Automatic evaluation with detailed explanations for each answer
+- **Performance Tracking**: Store quiz submissions with scores and timestamps
+- **Learning Reinforcement**: Questions designed to test understanding, not just memorization
 
-### 🔹 Gamified Learning Experience
+### 💪 **Motivation & Wellness**
+- **Daily Motivation Boosts**: AI-generated personalized encouragement based on user context and goals
+- **Screen Time Analytics**: Detailed logging and visualization of learning session durations
+- **Focus Quality Metrics**: Distinguish between passive and active engagement
+- **Smart Insights**: Data-driven suggestions for improving learning effectiveness
 
-* Visual learning journey inspired by **choice-based games** (branching checkpoints, alternate routes).
-* Points, streaks, leaderboards, and badges.
-* Daily motivation boosts and habit-building challenges.
-
-### 🔹 Community & Social Learning
-
-* **Find a Study Buddy**: Match with peers learning similar topics.
-* Group challenges, collaborative learning paths, and peer accountability.
-* Knowledge-sharing spaces to discuss concepts and exchange resources.
-
-### 🔹 Personal Growth Dashboard
-
-* Logs entire **learning journey** with interactive visualizations.
-* Tracks distractions, habits, screen time, and topic mastery.
-* Generates a **personal roadmap** with checkpoints and future goals.
+### 🎨 **Interactive YouTube Player**
+- **Embedded Video Experience**: Full YouTube IFrame API integration with custom controls
+- **Timestamp Notes**: Take clickable notes that jump to specific video moments
+- **Playback Speed Control**: 0.5x to 2x speed options for personalized viewing
+- **Progress Auto-Save**: Continuous progress persistence every 10 seconds
+- **Focus Detection**: Page Visibility API integration to measure genuine attention
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Frontend & Backend:** [Next.js](https://nextjs.org/) (Modern, server-side rendering, API routes, SEO-friendly)
-* **LLM Integration:** Groq Cloud (ultra-fast LLaMA inference)
-* **Content & Context AI:** Google Gemini API
-* **Database:** PostgreSQL (for structured logs & analytics)
-* **ORM:** Prisma (clean DB queries & schema migrations)
-* **Authentication:** NextAuth.js
-* **Visualisation:** D3.js or Recharts (for interactive dashboards)
-* **Styling:** Tailwind CSS + Framer Motion (animations)
-* **State Management:** Zustand or Redux Toolkit (depending on complexity)
-* **Deployment:** Vercel (for seamless Next.js hosting)
+### **Core Framework**
+- **[Next.js 15.5](https://nextjs.org/)** - React framework with App Router, Server Components, and API routes
+- **[React 19](https://react.dev/)** - Latest React with concurrent features
+- **[TypeScript 5](https://www.typescriptlang.org/)** - Full type safety across frontend and backend
+
+### **AI & Intelligence**
+- **[Google Gemini AI](https://ai.google.dev/)** - Advanced generative AI for content creation, quiz generation, and personalization
+- **Custom AI Service Layer** - Centralized prompt engineering and response parsing
+
+### **Database & Authentication**
+- **[Firebase Firestore](https://firebase.google.com/docs/firestore)** - Scalable NoSQL database with real-time capabilities
+- **[Firebase Authentication](https://firebase.google.com/docs/auth)** - Secure user authentication with Google OAuth and email/password
+- **[Firebase Admin SDK](https://firebase.google.com/docs/admin/setup)** - Server-side token verification and database operations
+
+### **State & UI**
+- **[Tailwind CSS 4](https://tailwindcss.com/)** - Utility-first styling with modern features
+- **[Framer Motion](https://www.framer.com/motion/)** - Production-ready animation library
+
+### **Development & Build**
+- **[Turbopack](https://turbo.build/)** - Next-generation bundler (7x faster than Webpack)
+- **[ESLint 9](https://eslint.org/)** - Code quality and consistency
+- **TypeScript Strict Mode** - Maximum type safety with no implicit `any`
 
 ---
 
-## 📈 Event Flow (User Journey)
+## 🏗️ Architecture Highlights
 
-1. **Registration/Login** → Secure onboarding with personalized preferences.
-2. **Domain Selection** → Choose Domain → Subdomain → Topic → Concept OR use custom prompt.
-3. **Learning Path Rendering** → AI auto-generates interactive stepwise learning journey.
-4. **Engagement Tracking** → Smart reminders, screen time logging, doubt clarifications.
-5. **Daily Wrap-up** → Dashboard shows:
+### **API Design**
+- **28+ RESTful Endpoints** - Comprehensive API coverage for all features
+- **Middleware Authentication** - Server-side JWT verification using Firebase Admin SDK
+- **Error Handling** - Graceful degradation with meaningful fallback behaviors
+- **Type-Safe Contracts** - Shared TypeScript interfaces between client and server
 
-   * Completed concepts
-   * Distraction tracking
-   * Gamified leaderboard updates
-   * Personalized improvement suggestions
-   * Next-day schedule planning
+### **Database Structure**
+- **19 Composite Indexes** - Optimized queries for leaderboards, progress tracking, and community features
+- **Subcollection Pattern** - Organized data hierarchy (users → stats, progress → steps)
+- **Real-Time Updates** - Firestore listeners for live leaderboard and activity feeds
 
----
-
-## 🤝 Community & Collaboration
-
-* **Study Buddy System**: AI matches learners based on skill goals, timezone, and pace.
-* **Collaborative Challenges**: Join group missions (e.g., "Finish Python Basics in 5 days").
-* **Peer Progress Visibility**: Opt-in feature to share progress & milestones.
-* **AI-Powered Recommendations**: Suggests potential peers, groups, or challenges.
+### **Performance Optimizations**
+- **Server-Side Rendering** - Fast initial page loads with Next.js SSR
+- **Turbopack Dev Mode** - Instant hot module replacement during development
+- **Optimistic UI Updates** - Immediate feedback before server confirmation
+- **Data Caching** - Smart request deduplication and cache invalidation
 
 ---
 
-## 🧪 Roadmap
+## 🚀 Quick Start
 
-**MVP (0-Cost Build)**
+### **Prerequisites**
+```bash
+Node.js 20+ and npm
+Firebase project with Firestore and Authentication enabled
+Google AI API key (Gemini)
+```
 
-* AI-powered learning path generation.
-* Embedded video-based content delivery.
-* Progress logging + dashboard.
-* Doubt clarification using Groq Cloud + Gemini API.
+### **Installation**
 
-**Future Enhancements**
+1. **Clone the repository**
+```bash
+git clone https://github.com/varunaditya27/LearnMateAI.git
+cd LearnMateAI
+```
 
-* Gamified branching learning journeys.
-* Full-scale community features (study buddies, group challenges).
-* Mobile-first PWA for accessibility.
-* AI-driven career roadmap planning.
+2. **Install dependencies**
+```bash
+npm install
+```
+
+3. **Configure environment variables**
+```bash
+# Create .env.local file with:
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+NEXT_GEMINI_API_KEY=your_gemini_api_key
+```
+
+4. **Set up Firebase Admin SDK**
+```bash
+# Place firebase_admin_sdk.json in project root
+```
+
+5. **Deploy Firestore indexes**
+```bash
+firebase deploy --only firestore:indexes
+```
+
+6. **Start development server**
+```bash
+npm run dev
+```
+
+7. **Open browser**
+```
+http://localhost:3000
+```
+
+### **Production Build**
+```bash
+npm run build
+npm start
+```
 
 ---
 
