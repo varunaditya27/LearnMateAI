@@ -32,27 +32,28 @@ export default function LandingPage() {
 
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 bg-[rgba(10,10,26,0.8)] backdrop-blur-[10px] z-[1000] border-b border-[rgba(0,242,254,0.2)]">
-        <div className="max-w-[1200px] mx-auto !px-8 flex justify-between items-center">
+        <div className="max-w-[1200px] mx-auto !px-4 !md:px-8 !py-4 flex justify-between items-center">
           <div className="flex items-center">
-            <span className="text-4xl font-bold text-white" style={{ textShadow: '0 0 5px rgba(0, 242, 254, 0.7)' }}>
+            <span className="text-2xl md:text-4xl font-bold text-white" style={{ textShadow: '0 0 5px rgba(0, 242, 254, 0.7)' }}>
               LearnMate
             </span>
           </div>
           
           <button 
-            className={`md:hidden flex flex-col cursor-pointer p-2 bg-transparent border-0 ${isMobileMenuOpen ? 'active' : ''}`}
-            onClick={toggleMobileMenu}
-          >
+  className="md:hidden flex flex-col cursor-pointer !p-2 bg-transparent border-0 z-[1001]"
+  onClick={toggleMobileMenu}
+  aria-label="Toggle menu"
+>
             <span className="w-[25px] h-[3px] bg-[#00f2fe] my-[3px] transition-all duration-300" style={{ boxShadow: '0 0 5px rgba(0, 242, 254, 0.5)', transform: isMobileMenuOpen ? 'rotate(-45deg) translate(-5px, 6px)' : 'none' }}></span>
             <span className="w-[25px] h-[3px] bg-[#00f2fe] my-[3px] transition-all duration-300" style={{ boxShadow: '0 0 5px rgba(0, 242, 254, 0.5)', opacity: isMobileMenuOpen ? 0 : 1 }}></span>
             <span className="w-[25px] h-[3px] bg-[#00f2fe] my-[3px] transition-all duration-300" style={{ boxShadow: '0 0 5px rgba(0, 242, 254, 0.5)', transform: isMobileMenuOpen ? 'rotate(45deg) translate(-5px, -6px)' : 'none' }}></span>
           </button>
           
-          <div className={`md:flex md:gap-10 md:items-center md:mr-0 fixed md:static top-[80px] left-0 w-full md:w-auto h-[calc(100vh-80px)] md:h-auto bg-[rgba(10,10,26,0.95)] md:bg-transparent backdrop-blur-[15px] md:backdrop-blur-0 flex-col md:flex-row justify-start md:justify-center items-center gap-0 md:gap-10 pt-4 md:pt-0 border-t md:border-t-0 border-[rgba(0,242,254,0.2)] transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-            <a href="#home" className="text-[#e0e0e0] no-underline font-medium text-2xl md:text-xl transition-all duration-300 py-4 md:py-0 px-8 md:px-0 w-full md:w-auto text-center border-b md:border-b-0 border-[rgba(0,242,254,0.2)] hover:text-[#00f2fe]" style={{ textShadow: '0 0 3px rgba(0, 242, 254, 0.3)' }} onClick={() => setIsMobileMenuOpen(false)}>Home</a>
-            <a href="#features" className="text-[#e0e0e0] no-underline font-medium text-2xl md:text-xl transition-all duration-300 py-4 md:py-0 px-8 md:px-0 w-full md:w-auto text-center border-b md:border-b-0 border-[rgba(0,242,254,0.2)] hover:text-[#00f2fe]" style={{ textShadow: '0 0 3px rgba(0, 242, 254, 0.3)' }} onClick={() => setIsMobileMenuOpen(false)}>Features</a>
-            <a href="#about" className="text-[#e0e0e0] no-underline font-medium text-2xl md:text-xl transition-all duration-300 py-4 md:py-0 px-8 md:px-0 w-full md:w-auto text-center border-b md:border-b-0 border-[rgba(0,242,254,0.2)] hover:text-[#00f2fe]" style={{ textShadow: '0 0 3px rgba(0, 242, 254, 0.3)' }} onClick={() => setIsMobileMenuOpen(false)}>About</a>
-            <Link href="/register" className="bg-transparent border border-[#00f2fe] text-[#00f2fe] !px-6 !py-2 rounded transition-all duration-300 mt-4 md:mt-0 w-auto hover:bg-[rgba(0,242,254,0.2)]" style={{ boxShadow: '0 0 15px rgba(0, 242, 254, 0.5)' }} onClick={() => setIsMobileMenuOpen(false)}>
+<div className={`fixed md:static top-[72px] left-0 w-full md:w-auto h-[calc(100vh-72px)] md:h-auto bg-[rgba(10,10,26,0.98)] md:bg-transparent backdrop-blur-[15px] md:backdrop-blur-0 flex flex-col md:flex-row justify-start md:justify-center items-center gap-2 md:gap-10 pt-8 md:pt-0 border-t md:border-t-0 border-[rgba(0,242,254,0.2)] transition-transform duration-300 z-[999] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>            <a href="#home" className="text-[#e0e0e0] no-underline font-medium text-2xl md:text-xl transition-all duration-300 py-4 md:py-0 px-8 md:px-0 w-full md:w-auto text-center border-b md:border-b-0 border-[rgba(0,242,254,0.2)] hover:text-[#00f2fe]" style={{ textShadow: '0 0 3px rgba(0, 242, 254, 0.3)' }} onClick={() => setIsMobileMenuOpen(false)}>Home</a>
+            <a href="#features" className="text-[#e0e0e0] no-underline font-medium text-2xl md:text-xl transition-all duration-300 py-4 md:py-0 px-8 md:px-0 w-full md:w-auto text-center border-b md:border-b-0 border-[rgba(0,242,254,0.1)] hover:text-[#00f2fe]" style={{ textShadow: '0 0 3px rgba(0, 242, 254, 0.3)' }} onClick={() => setIsMobileMenuOpen(false)}>Features</a>
+            <a href="#about" className="text-[#e0e0e0] no-underline font-medium text-2xl md:text-xl transition-all duration-300 py-4 md:py-0 px-8 md:px-0 w-full md:w-auto text-center border-b md:border-b-0 border-[rgba(0,242,254,0.1)] hover:text-[#00f2fe]" style={{ textShadow: '0 0 3px rgba(0, 242, 254, 0.3)' }} onClick={() => setIsMobileMenuOpen(false)}>About</a>
+
+            <Link href="/register" className="bg-transparent border-2 border-[#00f2fe] text-[#00f2fe] px-8 py-3 rounded transition-all duration-300 mt-6 md:mt-0 w-[200px] md:w-auto text-center hover:bg-[rgba(0,242,254,0.2)]" style={{ boxShadow: '0 0 15px rgba(0, 242, 254, 0.5)' }} onClick={() => setIsMobileMenuOpen(false)}>
               Get Started
             </Link>
           </div>
@@ -233,9 +234,9 @@ export default function LandingPage() {
             <div>
               <h4 className="text-xl font-semibold mb-4 text-[#e0e0e0]">Connect</h4>
               <div className="flex flex-col gap-4">
-                <a href="#" className="text-[#a0aec0] no-underline transition-colors duration-300 hover:text-[#00f2fe]">Twitter</a>
-                <a href="#" className="text-[#a0aec0] no-underline transition-colors duration-300 hover:text-[#00f2fe]">GitHub</a>
-                <a href="#" className="text-[#a0aec0] no-underline transition-colors duration-300 hover:text-[#00f2fe]">LinkedIn</a>
+                <a href="https://twitter.com" className="text-[#a0aec0] no-underline transition-colors duration-300 hover:text-[#00f2fe]">Twitter</a>
+                <a href="https://github.com/varunaditya27/LearnMateAI" className="text-[#a0aec0] no-underline transition-colors duration-300 hover:text-[#00f2fe]">GitHub</a>
+                <a href="https://linkedin.com" className="text-[#a0aec0] no-underline transition-colors duration-300 hover:text-[#00f2fe]">LinkedIn</a>
               </div>
             </div>
           </div>
