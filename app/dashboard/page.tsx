@@ -172,6 +172,8 @@ export default function DashboardPage() {
     100
   );
 
+  const currentStreak = stats?.currentStreak ?? 0;
+
   return (
     <DashboardLayout>
       <div className="space-y-12 mt-12 px-4">
@@ -180,13 +182,30 @@ export default function DashboardPage() {
           animate="visible"
           variants={fadeIn}
           transition={{ duration: 0.5 }}
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
-          <h1 className="text-4xl lg:text-5xl font-bold mb-3 px-2">
-            Welcome back, {(user?.displayName || authUser?.displayName || 'there')}
-          </h1>
-          <p className="text-lg text-[var(--muted-foreground)] px-2">
-            Continue your learning journey
-          </p>
+          <div>
+            <h1 className="text-4xl lg:text-5xl font-bold mb-3">
+              Welcome back, {(user?.displayName || authUser?.displayName || 'there')}
+            </h1>
+            <p className="text-lg text-[var(--muted-foreground)]">
+              Continue your learning journey
+            </p>
+          </div>
+
+          {/* Streak Badge */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 border-2 border-orange-500/50 rounded-2xl shadow-lg backdrop-blur-sm"
+          >
+            <span className="text-3xl">🔥</span>
+            <div>
+              <p className="text-sm text-[var(--muted-foreground)] font-medium">Current Streak</p>
+              <p className="text-2xl font-bold text-[var(--foreground)]">{currentStreak} Days</p>
+            </div>
+          </motion.div>
         </motion.div>
 
         <motion.div
