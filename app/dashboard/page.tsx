@@ -17,6 +17,7 @@ import { ProgressTracker } from '@/components/dashboard/ProgressTracker';
 import { Leaderboard } from '@/components/dashboard/Leaderboard';
 import { ScreenTimeWidget } from '@/components/dashboard/ScreenTimeWidget';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/services/api';
 import type { LearningPath } from '@/types';
@@ -106,6 +107,27 @@ export default function DashboardPage() {
       immediate: isReady,
       cacheKey: `leaderboard-${timeframe}`,
       watch: [timeframe, isReady],
+    }
+  );
+
+  const {
+    data: joinedChallenges,
+    loading: challengesLoading,
+    error: challengesError,
+    refetch: refetchChallenges,
+  } = useAsyncData(
+    async () => {
+      const response = await api.community.getMyJoinedChallenges();
+      if (response.success && response.data) {
+        return response.data;
+      }
+      return [];
+    },
+    {
+      enabled: isReady,
+      immediate: isReady,
+      cacheKey: 'my-joined-challenges',
+      watch: [isReady],
     }
   );
 
@@ -289,6 +311,74 @@ export default function DashboardPage() {
                       </CardContent>
                     </Card>
                   </Link>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {joinedChallenges && joinedChallenges.length > 0 && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeIn}
+            transition={{ duration: 0.5, delay: 0.25 }}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold">Your Active Challenges</h2>
+              <Link href="/dashboard/community">
+                <Button variant="outline" size="sm">View All</Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {joinedChallenges.slice(0, 3).map((participation, index) => (
+                <motion.div
+                  key={participation.participationId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                >
+                  <Card className="h-full">
+                    <CardHeader>
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="line-clamp-1 text-lg">{participation.challenge.name}</CardTitle>
+                        <Badge variant="secondary" size="sm">{participation.challenge.difficulty}</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-[var(--muted-foreground)] line-clamp-2">
+                        {participation.challenge.description}
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[var(--muted-foreground)]">Progress</span>
+                          <span className="font-semibold">{participation.progress}%</span>
+                        </div>
+                        <div className="w-full bg-[var(--muted)] rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
+                            style={{ width: `${participation.progress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs text-[var(--muted-foreground)]">
+                        <div>
+                          <span className="font-semibold text-[var(--foreground)]">Tasks:</span> {participation.completedTasks.length}/{participation.challenge.tasks.length}
+                        </div>
+                        <div>
+                          <span className="font-semibold text-[var(--foreground)]">Reward:</span> {participation.challenge.rewards?.points || 0} pts
+                        </div>
+                      </div>
+
+                      <Link href="/dashboard/progress">
+                        <Button variant="primary" size="sm" fullWidth>
+                          Continue Challenge
+                        </Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
                 </motion.div>
               ))}
             </div>

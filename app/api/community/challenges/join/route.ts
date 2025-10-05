@@ -1,15 +1,18 @@
 /**
  * Join Challenge API
  * 
- * Join an existing group challenge
+ * Join an existing group challenge with full Firestore integration
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, increment } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth) => {
   try {
     const body = await request.json();
-    const { challengeId, userId } = body;
+    const { challengeId } = body;
 
     if (!challengeId) {
       return NextResponse.json(
@@ -18,44 +21,89 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Get from database and verify capacity
-    const mockChallenge = {
-      id: challengeId,
-      name: 'Python Basics in 5 Days',
-      currentParticipants: 7,
-      maxParticipants: 10,
-      status: 'active'
-    };
+    // Get challenge document
+    const challengeRef = doc(db, 'challenges', challengeId);
+    const challengeDoc = await getDoc(challengeRef);
 
-    if (mockChallenge.currentParticipants >= mockChallenge.maxParticipants) {
+    if (!challengeDoc.exists()) {
+      return NextResponse.json(
+        { success: false, error: 'Challenge not found' },
+        { status: 404 }
+      );
+    }
+
+    const challengeData = challengeDoc.data();
+
+    // Check if challenge is full
+    if (challengeData.currentParticipants >= challengeData.maxParticipants) {
       return NextResponse.json(
         { success: false, error: 'Challenge is full' },
         { status: 409 }
       );
     }
 
-    if (mockChallenge.status !== 'active') {
+    // Check if challenge is active
+    if (challengeData.status !== 'active') {
       return NextResponse.json(
         { success: false, error: 'Challenge is not active' },
         { status: 400 }
       );
     }
 
-    // TODO: Add user to challenge participants in database
-    const participation = {
+    // Check if user already joined
+    const participantsRef = collection(db, 'challengeParticipants');
+    const existingQuery = query(
+      participantsRef,
+      where('challengeId', '==', challengeId),
+      where('userId', '==', auth.uid)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+
+    if (!existingSnapshot.empty) {
+      return NextResponse.json(
+        { success: false, error: 'You have already joined this challenge' },
+        { status: 409 }
+      );
+    }
+
+    // Add user to challenge participants
+    const participationRef = await addDoc(participantsRef, {
       challengeId,
-      userId: userId || 'current_user_id',
-      joinedAt: new Date().toISOString(),
+      userId: auth.uid,
+      joinedAt: serverTimestamp(),
       progress: 0,
-      status: 'active'
-    };
+      status: 'active',
+      completedTasks: [],
+      lastActivityAt: serverTimestamp(),
+    });
+
+    // Update challenge participant count
+    await updateDoc(challengeRef, {
+      currentParticipants: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Get updated challenge data
+    const updatedDoc = await getDoc(challengeRef);
+    const updatedData = updatedDoc.data();
 
     return NextResponse.json({
       success: true,
-      data: participation,
-      message: 'Successfully joined challenge'
+      data: {
+        participationId: participationRef.id,
+        challengeId,
+        userId: auth.uid,
+        joinedAt: new Date().toISOString(),
+        progress: 0,
+        status: 'active',
+        challenge: {
+          name: updatedData?.name,
+          currentParticipants: updatedData?.currentParticipants,
+          maxParticipants: updatedData?.maxParticipants,
+        },
+      },
+      message: 'Successfully joined challenge',
     });
-
   } catch (error) {
     console.error('Join challenge error:', error);
     return NextResponse.json(
@@ -63,4 +111,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
