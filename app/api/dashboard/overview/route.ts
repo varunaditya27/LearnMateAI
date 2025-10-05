@@ -5,12 +5,12 @@
  * Get comprehensive dashboard data including stats, progress, and recent activity.
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { verifyAuth } from '@/lib/auth-middleware';
 import { collection, query, where, getDocs, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 
-export async function GET(request) {
+export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyAuth(request);
     if (!authResult) {

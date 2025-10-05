@@ -32,14 +32,51 @@ export const GET = withAuth(async (request: NextRequest, auth) => {
     }
 
     const logsRef = collection(db, 'screenTimeLogs');
-    const q = query(
-      logsRef,
-      where('userId', '==', auth.uid),
-      where('startTime', '>=', Timestamp.fromDate(startDate)),
-      where('startTime', '<=', Timestamp.fromDate(endDate))
-    );
+    let querySnapshot;
 
-    const querySnapshot = await getDocs(q);
+    try {
+      // Try with index-based query
+      const q = query(
+        logsRef,
+        where('userId', '==', auth.uid),
+        where('startTime', '>=', Timestamp.fromDate(startDate)),
+        where('startTime', '<=', Timestamp.fromDate(endDate))
+      );
+      querySnapshot = await getDocs(q);
+    } catch (err: unknown) {
+      // Fallback if index is missing
+      if (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === 'failed-precondition') {
+        console.warn('[screen-time/analytics] Missing index, using fallback query');
+        
+        // Fallback: fetch all user logs and filter client-side
+        const fallbackQuery = query(logsRef, where('userId', '==', auth.uid));
+        const allSnapshot = await getDocs(fallbackQuery);
+        
+        // Filter by date range client-side
+        const startTime = startDate.getTime();
+        const endTime = endDate.getTime();
+        
+        const filteredDocs = allSnapshot.docs.filter(doc => {
+          const data = doc.data();
+          const logDate = data.startTime?.toDate?.() || new Date(data.date);
+          const logTime = logDate.getTime();
+          return logTime >= startTime && logTime <= endTime;
+        });
+        
+        // Create a snapshot-like object
+        querySnapshot = {
+          docs: filteredDocs,
+          empty: filteredDocs.length === 0,
+          size: filteredDocs.length,
+        };
+      } else {
+        throw err;
+      }
+    }
+
+    if (!querySnapshot) {
+      throw new Error('Failed to fetch screen time logs');
+    }
 
     // Aggregate data by category
     const categoryTotals: Record<string, number> = {
