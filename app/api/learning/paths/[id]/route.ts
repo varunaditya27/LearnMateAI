@@ -47,12 +47,23 @@ export async function GET(
         );
       }
 
+      // Convert Firestore Timestamps to serializable format
+      const serializedData = {
+        id: pathDoc.id,
+        ...pathData,
+        createdAt: pathData.createdAt?.toDate?.()?.toISOString() || pathData.createdAt,
+        updatedAt: pathData.updatedAt?.toDate?.()?.toISOString() || pathData.updatedAt,
+        startedAt: pathData.startedAt?.toDate?.()?.toISOString() || pathData.startedAt,
+        completedAt: pathData.completedAt?.toDate?.()?.toISOString() || pathData.completedAt,
+        steps: pathData.steps?.map((step: { completedAt?: { toDate?: () => Date } }) => ({
+          ...step,
+          completedAt: step.completedAt?.toDate?.()?.toISOString() || step.completedAt,
+        })) || [],
+      };
+
       return NextResponse.json({
         success: true,
-        data: {
-          id: pathDoc.id,
-          ...pathData,
-        },
+        data: serializedData,
       });
     } catch (error) {
       console.error('Get learning path error:', error);
