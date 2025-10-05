@@ -1,75 +1,113 @@
 /**
  * Group Challenges API
  * 
- * Create and manage group learning challenges
+ * Create and manage group learning challenges with full Firestore integration
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { withAuth } from '@/lib/api-helpers';
 
 // GET - List all available challenges
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'active';
     const topic = searchParams.get('topic');
 
-    // TODO: Fetch from database
-    const mockChallenges = [
-      {
-        id: 'challenge_1',
-        name: 'Python Basics in 5 Days',
-        description: 'Master Python fundamentals together',
-        topic: 'python',
-        durationDays: 5,
-        startDate: '2025-10-05',
-        endDate: '2025-10-10',
-        maxParticipants: 10,
-        currentParticipants: 7,
-        difficulty: 'beginner',
-        status: 'active',
-        rewards: {
-          points: 500,
-          badge: 'Python Pioneer'
-        },
-        createdBy: 'user_admin',
-        participants: []
-      },
-      {
-        id: 'challenge_2',
-        name: 'React Mastery Challenge',
-        description: 'Build 3 projects in React',
-        topic: 'react',
-        durationDays: 14,
-        startDate: '2025-10-01',
-        endDate: '2025-10-15',
-        maxParticipants: 15,
-        currentParticipants: 12,
-        difficulty: 'intermediate',
-        status: 'active',
-        rewards: {
-          points: 1000,
-          badge: 'React Master'
-        },
-        createdBy: 'user_admin',
-        participants: []
-      }
-    ];
+    const challengesRef = collection(db, 'challenges');
+    let challenges: Array<{ id: string; [key: string]: unknown }> = [];
 
-    let filteredChallenges = mockChallenges.filter(c => c.status === status);
-    if (topic) {
-      filteredChallenges = filteredChallenges.filter(c => c.topic === topic);
+    try {
+      let q;
+      if (topic) {
+        // Query by status and topic
+        q = query(
+          challengesRef,
+          where('status', '==', status),
+          where('topic', '==', topic),
+          orderBy('createdAt', 'desc')
+        );
+      } else {
+        // Query by status only
+        q = query(
+          challengesRef,
+          where('status', '==', status),
+          orderBy('createdAt', 'desc')
+        );
+      }
+
+      const querySnapshot = await getDocs(q);
+
+      challenges = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          description: data.description,
+          topic: data.topic,
+          durationDays: data.durationDays,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          maxParticipants: data.maxParticipants,
+          currentParticipants: data.currentParticipants || 0,
+          difficulty: data.difficulty,
+          status: data.status,
+          rewards: data.rewards,
+          createdBy: data.createdBy,
+          participants: data.participants || [],
+          createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        };
+      });
+    } catch (err: unknown) {
+      // Fallback if index is missing
+      if (typeof err === 'object' && err !== null && 'code' in err && (err as { code?: string }).code === 'failed-precondition') {
+        console.warn('[challenges] Missing index, using fallback query');
+        const fallbackQuery = query(challengesRef, where('status', '==', status));
+        const querySnapshot = await getDocs(fallbackQuery);
+
+        challenges = querySnapshot.docs
+          .map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              name: data.name,
+              description: data.description,
+              topic: data.topic,
+              durationDays: data.durationDays,
+              startDate: data.startDate,
+              endDate: data.endDate,
+              maxParticipants: data.maxParticipants,
+              currentParticipants: data.currentParticipants || 0,
+              difficulty: data.difficulty,
+              status: data.status,
+              rewards: data.rewards,
+              createdBy: data.createdBy,
+              participants: data.participants || [],
+              createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+            };
+          })
+          .filter(c => !topic || c.topic === topic)
+          .sort((a, b) => {
+            const dateA = new Date(a.createdAt as string).getTime();
+            const dateB = new Date(b.createdAt as string).getTime();
+            return dateB - dateA;
+          });
+      } else {
+        throw err;
+      }
     }
 
     return NextResponse.json({
       success: true,
-      data: filteredChallenges,
+      data: challenges,
       meta: {
-        total: filteredChallenges.length,
+        total: challenges.length,
         status,
-        topic
-      }
+        topic,
+      },
     });
-
   } catch (error) {
     console.error('Get challenges error:', error);
     return NextResponse.json(
@@ -77,64 +115,80 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // POST - Create a new challenge
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, auth) => {
   try {
     const body = await request.json();
-    const { 
-      name, 
-      description, 
-      topic, 
-      durationDays, 
+    const {
+      name,
+      description,
+      topic,
+      durationDays,
       maxParticipants,
       difficulty,
-      startDate 
+      startDate,
     } = body;
 
     // Validate required fields
     if (!name || !topic || !durationDays) {
       return NextResponse.json(
-        { success: false, error: 'Missing required fields' },
+        { success: false, error: 'Missing required fields: name, topic, durationDays' },
         { status: 400 }
       );
     }
 
-    // Calculate end date
-    const start = new Date(startDate || new Date());
+    // Calculate dates
+    const start = startDate ? new Date(startDate) : new Date();
     const end = new Date(start);
     end.setDate(end.getDate() + durationDays);
 
-    const newChallenge = {
-      id: `challenge_${Date.now()}`,
+    // Create challenge document
+    const challengesRef = collection(db, 'challenges');
+    const docRef = await addDoc(challengesRef, {
       name,
-      description,
+      description: description || '',
       topic,
       durationDays,
       startDate: start.toISOString().split('T')[0],
       endDate: end.toISOString().split('T')[0],
-      maxParticipants: maxParticipants || 10,
+      maxParticipants: maxParticipants || 20,
       currentParticipants: 0,
       difficulty: difficulty || 'beginner',
       status: 'active',
       rewards: {
         points: durationDays * 100,
-        badge: `${name} Champion`
+        badge: `${name} Champion`,
       },
-      createdBy: 'current_user_id', // TODO: Get from auth
+      createdBy: auth.uid,
       participants: [],
-      createdAt: new Date().toISOString()
-    };
-
-    // TODO: Save to database
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
 
     return NextResponse.json({
       success: true,
-      data: newChallenge,
-      message: 'Challenge created successfully'
+      data: {
+        id: docRef.id,
+        name,
+        description,
+        topic,
+        durationDays,
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+        maxParticipants: maxParticipants || 20,
+        currentParticipants: 0,
+        difficulty: difficulty || 'beginner',
+        status: 'active',
+        rewards: {
+          points: durationDays * 100,
+          badge: `${name} Champion`,
+        },
+        createdBy: auth.uid,
+      },
+      message: 'Challenge created successfully',
     }, { status: 201 });
-
   } catch (error) {
     console.error('Create challenge error:', error);
     return NextResponse.json(
@@ -142,4 +196,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
