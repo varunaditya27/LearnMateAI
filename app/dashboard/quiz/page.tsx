@@ -458,9 +458,9 @@ export default function QuizDashboardPage() {
 
                     {question.type === 'multiple-choice' && question.options ? (
                       <div className="space-y-2">
-                        {question.options.map((option) => (
+                        {question.options.map((option, optionIndex) => (
                           <label
-                            key={option}
+                            key={`${question.id}-option-${optionIndex}`}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg border transition-colors ${
                               answers[question.id] === option
                                 ? 'border-[var(--primary)] bg-[var(--primary)]/10'
