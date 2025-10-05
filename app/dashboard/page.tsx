@@ -35,27 +35,17 @@ const LEADERBOARD_TIMEFRAME_OPTIONS: Array<{ label: string; value: LeaderboardTi
 ];
 
 const fetchDashboardOverview = async () => {
-  console.log('[fetchDashboardOverview] Starting...');
-  try {
-    console.log('[fetchDashboardOverview] Calling api.dashboard.getOverview()...');
-    const response = await api.dashboard.getOverview();
-    console.log('[fetchDashboardOverview] Response received:', response);
+  const response = await api.dashboard.getOverview();
 
-    if (response.success && response.data) {
-      console.log('[fetchDashboardOverview] Success, returning data');
-      return response.data;
-    }
-    const message = response.error ?? 'Failed to fetch dashboard overview';
-    console.log('[fetchDashboardOverview] Error:', message);
-    if (message.toLowerCase().includes('not authenticated')) {
-      throw new Error('Please sign in to view your dashboard.');
-    }
-
-    throw new Error(message);
-  } catch (error) {
-    console.error('[fetchDashboardOverview] Exception caught:', error);
-    throw error;
+  if (response.success && response.data) {
+    return response.data;
   }
+  const message = response.error ?? 'Failed to fetch dashboard overview';
+  if (message.toLowerCase().includes('not authenticated')) {
+    throw new Error('Please sign in to view your dashboard.');
+  }
+
+  throw new Error(message);
 };
 
 const fetchLeaderboardData = async (timeframe: LeaderboardTimeframe) => {
@@ -111,19 +101,6 @@ export default function DashboardPage() {
 
   const isInitialLoading = authLoading || (overviewLoading && !dashboardData);
 
-  // Debug logging
-  if (typeof window !== 'undefined') {
-    console.log('[Dashboard] Auth state:', {
-      authLoading,
-      isAuthenticated,
-      hasUser: !!authUser,
-      overviewLoading,
-      hasDashboardData: !!dashboardData,
-      overviewError,
-      isReady,
-    });
-  }
-
   if (isInitialLoading) {
     return (
       <DashboardLayout>
@@ -135,8 +112,6 @@ export default function DashboardPage() {
               className="w-16 h-16 mx-auto border-4 border-[var(--primary)] border-t-transparent rounded-full"
             />
             <p className="text-[var(--muted-foreground)] text-lg">Loading your dashboard...</p>
-            {authLoading && <p className="text-sm text-[var(--muted-foreground)]">Checking authentication...</p>}
-            {!authLoading && overviewLoading && <p className="text-sm text-[var(--muted-foreground)]">Fetching your data...</p>}
           </div>
         </div>
       </DashboardLayout>

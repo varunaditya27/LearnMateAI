@@ -206,7 +206,7 @@ export default function QuizDashboardPage() {
       )
     : 0;
 
-  const totalQuestions = selectedQuiz?.questions.length ?? 0;
+  const totalQuestions = selectedQuiz?.questions?.length ?? 0;
 
   return (
     <DashboardLayout>
@@ -385,7 +385,7 @@ export default function QuizDashboardPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-[var(--foreground)]">{quiz.topic}</h3>
-                        <p className="text-xs text-[var(--muted-foreground)]">{quiz.questions.length} questions • {quiz.estimatedMinutes} min</p>
+                        <p className="text-xs text-[var(--muted-foreground)]">{quiz.questions?.length ?? 0} questions • {quiz.estimatedMinutes} min</p>
                       </div>
                       <span className={`px-3 py-1 text-xs rounded-full font-semibold ${difficultyColors[quiz.difficulty]}`}>
                         {quiz.difficulty}
@@ -416,13 +416,13 @@ export default function QuizDashboardPage() {
                 <div>
                   <CardTitle>{selectedQuiz.topic}</CardTitle>
                   <p className="text-sm text-[var(--muted-foreground)]">
-                    {selectedQuiz.questions.length} questions • Estimated {selectedQuiz.estimatedMinutes} minutes • Passing score {selectedQuiz.passingScore}%
+                    {selectedQuiz.questions?.length ?? 0} questions • Estimated {selectedQuiz.estimatedMinutes} minutes • Passing score {selectedQuiz.passingScore}%
                   </p>
                 </div>
                 <Badge variant="accent">{selectedQuiz.difficulty}</Badge>
               </CardHeader>
               <CardContent className="space-y-6">
-                {selectedQuiz.questions.map((question, index) => (
+                {selectedQuiz.questions?.map((question, index) => (
                   <div
                     key={question.id}
                     className="p-4 rounded-xl border border-[var(--border)] bg-[var(--card)] space-y-3"

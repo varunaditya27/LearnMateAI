@@ -30,6 +30,7 @@ import type {
 } from '@/types/api';
 
 import type { User, LearningPath, Progress } from '@/types';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 // ============================================
 // HELPER FUNCTIONS
@@ -41,11 +42,33 @@ import type { User, LearningPath, Progress } from '@/types';
 async function getAuthToken(): Promise<string | null> {
   try {
     const { auth } = await import('@/lib/firebase');
-    const user = auth.currentUser;
-    if (!user) return null;
-    return await user.getIdToken();
+    
+    // If user is already available, get token immediately
+    if (auth.currentUser) {
+      return await auth.currentUser.getIdToken(true);
+    }
+    
+    // Wait for auth to initialize (up to 5 seconds)
+    const user = await new Promise<FirebaseUser | null>((resolve) => {
+      const timeoutId = setTimeout(() => {
+        unsubscribe();
+        resolve(null);
+      }, 5000);
+
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        clearTimeout(timeoutId);
+        unsubscribe();
+        resolve(user);
+      });
+    });
+
+    if (!user) {
+      return null;
+    }
+    
+    return await user.getIdToken(true); // Force refresh
   } catch (error) {
-    console.warn('No auth token available from Firebase auth:', error);
+    console.error('[getAuthToken] Error getting auth token:', error);
     return null;
   }
 }
@@ -57,11 +80,8 @@ async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
-  console.log(`[API] Starting call to ${endpoint}`);
   try {
-    console.log(`[API] Getting auth token...`);
     const token = await getAuthToken();
-    console.log(`[API] Token obtained:`, token ? 'yes' : 'no');
     
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -69,20 +89,15 @@ async function apiCall<T>(
       ...options.headers,
     };
 
-    console.log(`[API] Making fetch request to ${endpoint}`);
     const response = await fetch(endpoint, {
       ...options,
       headers,
     });
-    console.log(`[API] Fetch completed, status: ${response.status}`);
 
-    console.log(`[API] Parsing JSON response...`);
     const data = (await response.json()) as ApiResponse<T>;
-    console.log(`[API] JSON parsed successfully`);
 
     if (!response.ok) {
       const errorMessage = data?.error || `HTTP ${response.status}: ${response.statusText}`;
-      console.log(`[API] Response not OK: ${errorMessage}`);
 
       if (response.status === 401) {
         return {
@@ -95,10 +110,8 @@ async function apiCall<T>(
       throw new Error(errorMessage);
     }
 
-    console.log(`[API] Call to ${endpoint} successful`);
     return data;
   } catch (error) {
-    console.error(`[API] Error in call to ${endpoint}:`, error);
     if (!(error instanceof Error && /not authenticated/i.test(error.message))) {
       console.error(`API call to ${endpoint} failed:`, error);
     }

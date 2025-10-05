@@ -63,14 +63,11 @@ export function useAsyncData<T>(
     const currentFetchId = ++fetchCountRef.current;
 
     const runFetch = async () => {
-      console.log('[useAsyncData] Starting fetch, ID:', currentFetchId);
       setLoading(true);
       setError(null);
 
       try {
         const result = await fetcher();
-        
-        console.log('[useAsyncData] Fetch completed, ID:', currentFetchId, 'Result:', result);
 
         // Only update if this is still the latest fetch and component is mounted
         if (currentFetchId === fetchCountRef.current && isMountedRef.current) {
@@ -78,15 +75,10 @@ export function useAsyncData<T>(
             asyncDataCache.set(cacheKey, result);
           }
 
-          console.log('[useAsyncData] Updating state with result');
           setData(result);
           setLoading(false);
-        } else {
-          console.log('[useAsyncData] Ignoring stale fetch, current ID:', fetchCountRef.current);
         }
       } catch (err) {
-        console.error('[useAsyncData] Fetch error:', err);
-        
         if (currentFetchId === fetchCountRef.current && isMountedRef.current) {
           const message = err instanceof Error ? err.message : 'Failed to fetch data';
           setError(message);
