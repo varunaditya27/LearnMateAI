@@ -1,16 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { SetStateAction } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const asyncDataCache = new Map<string, unknown>();
 
-export interface UseAsyncDataOptions<T> {
+export interface UseAsyncDataOptions {
   enabled?: boolean;
   immediate?: boolean;
-  initialData?: T | null;
-  cacheKey?: string | false;
-  watch?: ReadonlyArray<unknown>;
+  cacheKey?: string;
+  watch?: unknown[];
 }
 
 export interface UseAsyncDataResult<T> {
@@ -18,130 +16,120 @@ export interface UseAsyncDataResult<T> {
   loading: boolean;
   error: string | null;
   hasData: boolean;
-  refetch: () => Promise<T | null>;
-  setData: (value: SetStateAction<T | null>) => void;
+  refetch: () => Promise<void>;
+  setData: (value: T | null) => void;
   invalidate: () => void;
 }
 
 export function useAsyncData<T>(
   fetcher: () => Promise<T>,
-  options: UseAsyncDataOptions<T> = {}
+  options: UseAsyncDataOptions = {}
 ): UseAsyncDataResult<T> {
   const {
     enabled = true,
     immediate = true,
-    initialData = null,
     cacheKey,
     watch = [],
   } = options;
 
-  const cachedValue = useMemo(() => {
-    if (!cacheKey) return undefined;
-    return asyncDataCache.get(cacheKey) as T | undefined;
-  }, [cacheKey]);
+  // Initialize with cached data if available
+  const [data, setData] = useState<T | null>(() => {
+    if (cacheKey && asyncDataCache.has(cacheKey)) {
+      return asyncDataCache.get(cacheKey) as T;
+    }
+    return null;
+  });
 
-  const [data, setDataState] = useState<T | null>(cachedValue ?? initialData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(immediate && enabled && !cachedValue);
+  
+  const isMountedRef = useRef(true);
+  const fetchCountRef = useRef(0);
 
-  const isMounted = useRef(true);
-  const fetcherRef = useRef(fetcher);
-
+  // Track mount status
   useEffect(() => {
-    fetcherRef.current = fetcher;
-  }, [fetcher]);
-
-  useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      isMounted.current = false;
+      isMountedRef.current = false;
     };
   }, []);
 
-  useEffect(() => {
-    if (cachedValue !== undefined) {
-      setDataState(cachedValue);
-    }
-  }, [cachedValue]);
-
-  const run = useCallback(async () => {
-    if (!enabled) return data;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 second timeout
-      });
-
-      const result = await Promise.race([
-        fetcherRef.current(),
-        timeoutPromise
-      ]);
-
-      if (!isMounted.current) {
-        return null;
-      }
-
-      if (cacheKey) {
-        asyncDataCache.set(cacheKey, result);
-      }
-
-      setDataState(result);
-      setLoading(false);
-      return result;
-    } catch (err) {
-      if (!isMounted.current) {
-        return null;
-      }
-
-      const message = err instanceof Error ? err.message : 'Failed to fetch data';
-      console.error('[useAsyncData] Error:', message, err);
-      setError(message);
-      setLoading(false);
-      return null;
-    }
-  }, [cacheKey, data, enabled]);
-
-  const serializedWatch = useMemo(() => JSON.stringify(watch), [watch]);
-
+  // Main fetch effect - triggers when dependencies change
   useEffect(() => {
     if (!enabled || !immediate) {
       return;
     }
 
-    run();
-  }, [enabled, immediate, run, serializedWatch]);
+    const currentFetchId = ++fetchCountRef.current;
 
-  const refetch = useCallback(async () => run(), [run]);
+    const runFetch = async () => {
+      console.log('[useAsyncData] Starting fetch, ID:', currentFetchId);
+      setLoading(true);
+      setError(null);
 
-  const setData = useCallback(
-    (value: SetStateAction<T | null>) => {
-      setDataState((prev) => {
-        const next = typeof value === 'function'
-          ? (value as (arg: T | null) => T | null)(prev)
-          : value;
+      try {
+        const result = await fetcher();
+        
+        console.log('[useAsyncData] Fetch completed, ID:', currentFetchId, 'Result:', result);
 
-        if (cacheKey) {
-          if (next === null || next === undefined) {
-            asyncDataCache.delete(cacheKey);
-          } else {
-            asyncDataCache.set(cacheKey, next);
+        // Only update if this is still the latest fetch and component is mounted
+        if (currentFetchId === fetchCountRef.current && isMountedRef.current) {
+          if (cacheKey) {
+            asyncDataCache.set(cacheKey, result);
           }
+
+          console.log('[useAsyncData] Updating state with result');
+          setData(result);
+          setLoading(false);
+        } else {
+          console.log('[useAsyncData] Ignoring stale fetch, current ID:', fetchCountRef.current);
         }
+      } catch (err) {
+        console.error('[useAsyncData] Fetch error:', err);
+        
+        if (currentFetchId === fetchCountRef.current && isMountedRef.current) {
+          const message = err instanceof Error ? err.message : 'Failed to fetch data';
+          setError(message);
+          setLoading(false);
+        }
+      }
+    };
 
-        return next ?? null;
-      });
-    },
-    [cacheKey]
-  );
+    runFetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, immediate, cacheKey, ...watch]);
 
-  const invalidate = useCallback(() => {
+  const refetch = async () => {
+    if (!enabled) return;
+
+    const currentFetchId = ++fetchCountRef.current;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await fetcher();
+      
+      if (currentFetchId === fetchCountRef.current && isMountedRef.current) {
+        if (cacheKey) {
+          asyncDataCache.set(cacheKey, result);
+        }
+        setData(result);
+        setLoading(false);
+      }
+    } catch (err) {
+      if (currentFetchId === fetchCountRef.current && isMountedRef.current) {
+        const message = err instanceof Error ? err.message : 'Failed to fetch data';
+        setError(message);
+        setLoading(false);
+      }
+    }
+  };
+
+  const invalidate = () => {
     if (cacheKey) {
       asyncDataCache.delete(cacheKey);
     }
-  }, [cacheKey]);
+  };
 
   return {
     data,
