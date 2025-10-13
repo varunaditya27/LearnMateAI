@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Rocket, RefreshCw } from 'lucide-react';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -172,7 +173,10 @@ export default function RoadmapPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">🚀 Career Roadmaps</h1>
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <Rocket className="w-8 h-8 text-[var(--primary)]" />
+              Career Roadmaps
+            </h1>
             <p className="text-[var(--muted-foreground)]">
               Map your path from where you are to the role you want next.
             </p>
@@ -188,6 +192,7 @@ export default function RoadmapPage() {
               <option value="completed">Completed</option>
             </select>
             <Button variant="outline" onClick={handleRefresh} isLoading={roadmapsLoading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Users, RefreshCw } from 'lucide-react';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -348,13 +349,17 @@ export default function CommunityPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">🤝 Community Hub</h1>
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <Users className="w-8 h-8 text-[var(--primary)]" />
+              Community Hub
+            </h1>
             <p className="text-[var(--muted-foreground)]">
               Join challenges, find study buddies, and share insights with other learners.
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleRefresh} isLoading={challengesLoading || discussionsLoading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>

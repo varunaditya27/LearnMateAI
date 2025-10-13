@@ -8,6 +8,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { Timer, RefreshCw } from 'lucide-react';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { ScreenTimeWidget } from '@/components/dashboard/ScreenTimeWidget';
@@ -190,7 +191,10 @@ export default function ScreenTimePage() {
           className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">⏱️ Screen Time Insights</h1>
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <Timer className="w-8 h-8 text-[var(--primary)]" />
+              Screen Time Insights
+            </h1>
             <p className="text-[var(--muted-foreground)]">
               Monitor where your time goes and keep your learning on track.
             </p>
@@ -215,6 +219,7 @@ export default function ScreenTimePage() {
               );
             })}
             <Button variant="outline" onClick={handleRefresh} isLoading={analyticsLoading || logsLoading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Zap, RefreshCw } from 'lucide-react';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -253,13 +254,17 @@ export default function MotivationPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">💪 Motivation & Habits</h1>
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <Zap className="w-8 h-8 text-[var(--primary)]" />
+              Motivation & Habits
+            </h1>
             <p className="text-[var(--muted-foreground)]">
               Stay inspired and keep your learning habits on track every day.
             </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleRefresh} isLoading={boostsLoading || habitsLoading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>

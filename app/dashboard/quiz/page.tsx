@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Brain, RefreshCw } from 'lucide-react';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -240,7 +241,10 @@ export default function QuizDashboardPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">🧠 Quiz Center</h1>
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <Brain className="w-8 h-8 text-[var(--primary)]" />
+              Quiz Center
+            </h1>
             <p className="text-[var(--muted-foreground)]">
               Challenge yourself with personalized quizzes and track your mastery.
             </p>
@@ -253,6 +257,7 @@ export default function QuizDashboardPage() {
               onChange={(event) => setTopicFilter(event.target.value)}
             />
             <Button variant="outline" onClick={handleRefresh} isLoading={quizzesLoading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>

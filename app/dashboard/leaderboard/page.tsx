@@ -7,6 +7,7 @@
 'use client';
 
 import React from 'react';
+import { Trophy } from 'lucide-react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Leaderboard } from '@/components/dashboard/Leaderboard';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -18,8 +19,9 @@ export default function LeaderboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-heading font-bold mb-2">
-            🏆 Leaderboard
+          <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+            <Trophy className="w-8 h-8 text-[var(--primary)]" />
+            Leaderboard
           </h1>
           <p className="text-[var(--muted-foreground)]">
             See how you rank against other learners

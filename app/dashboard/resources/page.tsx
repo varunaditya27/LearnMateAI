@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { BookOpen, RefreshCw, ExternalLink, ThumbsUp, CheckCircle, Bookmark, X, Video, FileText, Gamepad2, GraduationCap, BookMarked } from 'lucide-react';
 
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -46,12 +47,12 @@ const difficultyStyles: Record<ResourceRecommendation['difficulty'], string> = {
   advanced: 'bg-rose-100 text-rose-700',
 };
 
-const resourceIcons: Record<ResourceRecommendation['type'], string> = {
-  video: '🎥',
-  article: '📰',
-  interactive: '🕹️',
-  course: '🎓',
-  documentation: '📘',
+const resourceIconsMap: Record<ResourceRecommendation['type'], React.ComponentType<{ className?: string }>> = {
+  video: Video,
+  article: FileText,
+  interactive: Gamepad2,
+  course: GraduationCap,
+  documentation: BookMarked,
 };
 
 const fetchRecommendations = async (query: RecommendationQuery | null) => {
@@ -186,13 +187,17 @@ export default function ResourceRecommendationsPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">📚 Smart Resources</h1>
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <BookOpen className="w-8 h-8 text-[var(--primary)]" />
+              Smart Resources
+            </h1>
             <p className="text-[var(--muted-foreground)]">
               Discover tailored videos, articles, and hands-on projects crafted for how you learn best.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => refetch()} isLoading={loading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>
@@ -331,25 +336,31 @@ export default function ResourceRecommendationsPage() {
                   Avg. {summary?.averageMinutes ?? 0} min each
                 </span>
                 {summary?.byType &&
-                  Object.entries(summary.byType).map(([type, count]) => (
-                    <span key={type} className="px-3 py-1 rounded-full bg-[var(--muted)] text-[var(--muted-foreground)]">
-                      {resourceIcons[type as ResourceRecommendation['type']]} {type}: {count}
-                    </span>
-                  ))}
+                  Object.entries(summary.byType).map(([type, count]) => {
+                    const IconComponent = resourceIconsMap[type as ResourceRecommendation['type']];
+                    return (
+                      <span key={type} className="px-3 py-1 rounded-full bg-[var(--muted)] text-[var(--muted-foreground)] flex items-center gap-1.5">
+                        {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
+                        {type}: {count}
+                      </span>
+                    );
+                  })}
               </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-              {recommendations.recommendations.map((resource) => (
-                <Card key={resource.url} className="border-2 border-[var(--border)] hover:border-[var(--primary)]/60 transition-colors">
-                  <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <span className="text-xl">{resourceIcons[resource.type]}</span>
-                        {resource.title}
-                      </CardTitle>
-                      <p className="text-sm text-[var(--muted-foreground)] mt-1">{resource.platform}</p>
-                    </div>
+              {recommendations.recommendations.map((resource) => {
+                const ResourceIcon = resourceIconsMap[resource.type];
+                return (
+                  <Card key={resource.url} className="border-2 border-[var(--border)] hover:border-[var(--primary)]/60 transition-colors">
+                    <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          {ResourceIcon && <ResourceIcon className="w-5 h-5 text-[var(--primary)]" />}
+                          {resource.title}
+                        </CardTitle>
+                        <p className="text-sm text-[var(--muted-foreground)] mt-1">{resource.platform}</p>
+                      </div>
                     <div className="flex flex-wrap gap-2">
                       <span className={`px-3 py-1 text-xs rounded-full font-semibold ${difficultyStyles[resource.difficulty]}`}>
                         {resource.difficulty}
@@ -390,17 +401,18 @@ export default function ResourceRecommendationsPage() {
                             onClick={() => handleFeedback(resource, action)}
                             isLoading={feedbackLoading === `${resource.url}-${action}`}
                           >
-                            {action === 'liked' && '👍 Like'}
-                            {action === 'saved' && '🔖 Save'}
-                            {action === 'completed' && '✅ Completed'}
-                            {action === 'dismissed' && '🙈 Dismiss'}
+                            {action === 'liked' && <><ThumbsUp className="w-3.5 h-3.5 mr-1.5" /> Like</>}
+                            {action === 'saved' && <><Bookmark className="w-3.5 h-3.5 mr-1.5" /> Save</>}
+                            {action === 'completed' && <><CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Completed</>}
+                            {action === 'dismissed' && <><X className="w-3.5 h-3.5 mr-1.5" /> Dismiss</>}
                           </Button>
                         ))}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+              );
+              })}
             </div>
 
             {recommendations.learningPath?.length ? (

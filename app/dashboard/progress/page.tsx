@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { TrendingUp, RefreshCw } from 'lucide-react';
 
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -235,8 +236,9 @@ export default function ProgressPage() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-heading font-bold mb-2">
-              📈 Learning Progress
+            <h1 className="text-3xl font-heading font-bold mb-2 flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 text-[var(--primary)]" />
+              Learning Progress
             </h1>
             <p className="text-[var(--muted-foreground)]">
               Track your momentum across all learning paths and concepts.
@@ -244,6 +246,7 @@ export default function ProgressPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleRefresh} isLoading={progressLoading || pathsLoading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
           </div>
