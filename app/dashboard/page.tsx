@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { api } from '@/services/api';
 import type { LearningPath } from '@/types';
+import { Flame, AlertTriangle, Target, BookOpen, Pencil } from 'lucide-react';
 
 type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all-time';
 
@@ -162,7 +163,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <Card className="max-w-md">
             <CardContent className="text-center py-12">
-              <div className="text-6xl mb-6">⚠️</div>
+              <AlertTriangle className="w-16 h-16 mx-auto text-yellow-500 mb-6" />
               <h2 className="text-2xl font-bold mb-4">Oops! Something went wrong</h2>
               <p className="text-[var(--muted-foreground)] mb-6">{message}</p>
               <Button variant="primary" onClick={refetchOverview}>
@@ -219,7 +220,7 @@ export default function DashboardPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-500/20 to-red-500/20 border-2 border-orange-500/50 rounded-2xl shadow-lg backdrop-blur-sm"
           >
-            <span className="text-3xl">🔥</span>
+            <Flame className="w-8 h-8 text-orange-400" />
             <div>
               <p className="text-sm text-[var(--muted-foreground)] font-medium">Current Streak</p>
               <p className="text-2xl font-bold text-[var(--foreground)]">{currentStreak} Days</p>
@@ -397,17 +398,17 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Link href="/dashboard/learning/generate">
-                <Button variant="primary" fullWidth leftIcon={<span>🎯</span>}>
+                <Button variant="primary" fullWidth leftIcon={<Target className="w-5 h-5" />}>
                   Start New Learning Path
                 </Button>
               </Link>
               <Link href="/dashboard/learning/paths">
-                <Button variant="secondary" fullWidth leftIcon={<span>📚</span>}>
+                <Button variant="secondary" fullWidth leftIcon={<BookOpen className="w-5 h-5" />}>
                   View All Paths
                 </Button>
               </Link>
               <Link href="/dashboard/quiz/generate">
-                <Button variant="outline" fullWidth leftIcon={<span>📝</span>}>
+                <Button variant="outline" fullWidth leftIcon={<Pencil className="w-5 h-5" />}>
                   Take a Quiz
                 </Button>
               </Link>

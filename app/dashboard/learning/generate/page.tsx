@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { api } from '@/services/api';
 import { useRouter } from 'next/navigation';
+import { Code, Smartphone, BarChart, BrainCircuit, Cloud, Rocket, ArrowLeft, Wand2 } from 'lucide-react';
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -21,12 +22,12 @@ const fadeIn = {
 };
 
 const domains = [
-  { id: 'web-dev', name: 'Web Development', icon: '🌐' },
-  { id: 'mobile-dev', name: 'Mobile Development', icon: '📱' },
-  { id: 'data-science', name: 'Data Science', icon: '📊' },
-  { id: 'ai-ml', name: 'AI & Machine Learning', icon: '🤖' },
-  { id: 'cloud', name: 'Cloud Computing', icon: '☁️' },
-  { id: 'devops', name: 'DevOps', icon: '🚀' },
+  { id: 'web-dev', name: 'Web Development', icon: Code },
+  { id: 'mobile-dev', name: 'Mobile Development', icon: Smartphone },
+  { id: 'data-science', name: 'Data Science', icon: BarChart },
+  { id: 'ai-ml', name: 'AI & Machine Learning', icon: BrainCircuit },
+  { id: 'cloud', name: 'Cloud Computing', icon: Cloud },
+  { id: 'devops', name: 'DevOps', icon: Rocket },
 ];
 
 const subdomains: Record<string, Array<{ id: string; name: string }>> = {
@@ -171,7 +172,7 @@ export default function GenerateLearningPathPage() {
                           : 'border-[var(--border)] hover:border-[var(--primary)]/50'
                       }`}
                     >
-                      <div className="text-4xl mb-3">{domain.icon}</div>
+                      <domain.icon className="w-10 h-10 mb-3 text-[var(--primary)]" />
                       <div className="font-semibold">{domain.name}</div>
                     </motion.button>
                   ))}
@@ -266,8 +267,9 @@ export default function GenerateLearningPathPage() {
                     onClick={handleGenerate}
                     disabled={loading || !topic}
                     className="flex-1"
+                    leftIcon={loading ? undefined : <Wand2 className="w-5 h-5" />}
                   >
-                    {loading ? 'Generating...' : '✨ Generate Learning Path'}
+                    {loading ? 'Generating...' : 'Generate Learning Path'}
                   </Button>
                 </div>
               </CardContent>

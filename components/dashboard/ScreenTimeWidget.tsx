@@ -12,21 +12,22 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { api } from '@/services/api';
+import { Instagram, Youtube, Twitter, MessageSquare, Clapperboard, Briefcase } from 'lucide-react';
 
 interface AppShortcut {
   name: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
   url: string;
   category: 'social' | 'entertainment' | 'productive';
 }
 
 const appShortcuts: AppShortcut[] = [
-  { name: 'Instagram', icon: '📷', url: 'https://instagram.com', category: 'social' },
-  { name: 'YouTube', icon: '▶️', url: 'https://youtube.com', category: 'entertainment' },
-  { name: 'Twitter', icon: '🐦', url: 'https://twitter.com', category: 'social' },
-  { name: 'Reddit', icon: '🤖', url: 'https://reddit.com', category: 'social' },
-  { name: 'Netflix', icon: '🎬', url: 'https://netflix.com', category: 'entertainment' },
-  { name: 'LinkedIn', icon: '💼', url: 'https://linkedin.com', category: 'productive' },
+  { name: 'Instagram', icon: Instagram, url: 'https://instagram.com', category: 'social' },
+  { name: 'YouTube', icon: Youtube, url: 'https://youtube.com', category: 'entertainment' },
+  { name: 'Twitter', icon: Twitter, url: 'https://twitter.com', category: 'social' },
+  { name: 'Reddit', icon: MessageSquare, url: 'https://reddit.com', category: 'social' },
+  { name: 'Netflix', icon: Clapperboard, url: 'https://netflix.com', category: 'entertainment' },
+  { name: 'LinkedIn', icon: Briefcase, url: 'https://linkedin.com', category: 'productive' },
 ];
 
 interface TrackedSession {
@@ -209,7 +210,7 @@ export const ScreenTimeWidget: React.FC = () => {
               onClick={() => handleAppClick(app)}
               className="flex flex-col items-center gap-2 p-4 rounded-xl bg-[var(--muted)] hover:bg-[var(--muted)]/70 transition-colors"
             >
-              <span className="text-3xl">{app.icon}</span>
+              <app.icon className="w-8 h-8" />
               <span className="text-xs font-medium text-center text-[var(--foreground)]">{app.name}</span>
               <Badge variant={getCategoryColor(app.category)} size="sm">
                 {app.category}

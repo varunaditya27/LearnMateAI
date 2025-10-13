@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import Link from 'next/link';
 import { api } from '@/services/api';
+import { PlusCircle, Book, AlertTriangle, Search } from 'lucide-react';
 import type { LearningPath } from '@/types';
 
 const fadeIn = {
@@ -117,7 +118,7 @@ export default function AllLearningPathsPage() {
               </p>
             </div>
             <Link href="/dashboard/learning/generate">
-              <Button variant="primary" leftIcon={<span>✨</span>}>
+              <Button variant="primary" leftIcon={<PlusCircle className="w-5 h-5" />}>
                 Create New Path
               </Button>
             </Link>
@@ -148,7 +149,7 @@ export default function AllLearningPathsPage() {
           >
             <div className="p-6 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">⚠️</span>
+                <AlertTriangle className="w-6 h-6" />
                 <div>
                   <h3 className="font-bold">Error</h3>
                   <p>{error}</p>
@@ -167,7 +168,7 @@ export default function AllLearningPathsPage() {
           >
             <Card>
               <CardContent className="text-center py-16">
-                <div className="text-6xl mb-4">📚</div>
+                <Book className="w-16 h-16 mx-auto text-[var(--muted-foreground)] mb-4" />
                 <h3 className="text-2xl font-bold mb-2">No Learning Paths Yet</h3>
                 <p className="text-[var(--muted-foreground)] mb-6">
                   {filter === 'all'
