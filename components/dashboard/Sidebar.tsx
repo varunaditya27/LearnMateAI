@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLinkClick }) => {
   };
 
   return (
-    <aside className="w-64 h-screen bg-[var(--card)] border-r border-[var(--border)] flex flex-col">
+    <aside className="fixed left-0 top-0 w-56 h-screen bg-[var(--card)] border-r border-[var(--border)] flex flex-col z-40">
       <div className="h-20 flex items-center px-6 border-b border-[var(--border)]">
         <Link href="/dashboard" className="flex items-center gap-2" onClick={onLinkClick}>
           <h1 className="text-2xl font-bold text-[var(--primary)] tracking-tight hover:opacity-80 transition-opacity">
